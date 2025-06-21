@@ -29,8 +29,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Login Auth (local)
 const USERS = {
-  mohib: "zainab",
-  zainab: "mohib",
+  mohib: "1234",
+  girlfriend: "loveu",
 };
 
 app.post('/login', (req, res) => {
