@@ -84,6 +84,18 @@ app.get('/messages', async (req, res) => {
   const messages = await Message.find().sort({ timestamp: 1 }).limit(100);
   res.json(messages);
 });
+// Delete All
+app.delete('/messages', async (req, res) => {
+  await Message.deleteMany({});
+  res.sendStatus(200);
+});
+
+// Delete One
+app.delete('/messages/:id', async (req, res) => {
+  await Message.findByIdAndDelete(req.params.id);
+  res.sendStatus(200);
+});
+
 
 // Serve frontend (index.html in root)
 app.use(express.static(path.join(__dirname)));

@@ -6,6 +6,7 @@ const messageInput = document.getElementById("message-input");
 const chatBox = document.getElementById("chat-box");
 const fileForm = document.getElementById("upload-form");
 const fileInput = document.getElementById("file-input");
+const deleteAllBtn = document.getElementById("delete-all-btn"); // ✅ Button for deleting all
 
 let nickname = "";
 
@@ -25,10 +26,7 @@ loginBtn.addEventListener("click", async () => {
     document.getElementById("login-section").classList.add("hidden");
     document.getElementById("chat-section").classList.remove("hidden");
 
-    // Notify server user has connected
     socket.emit("user_connected", nickname);
-
-    // Load chat history
     loadChatHistory();
   } else {
     document.getElementById("login-error").classList.remove("hidden");
@@ -36,10 +34,15 @@ loginBtn.addEventListener("click", async () => {
 });
 
 // ✅ Add message to chat
-function appendMessage(name, text) {
+function appendMessage(id, name, text) {
   const div = document.createElement("div");
-  div.className = "bg-white rounded-lg p-2 shadow border border-purple-300";
-  div.innerHTML = `<strong class="text-purple-600">${name}</strong>: ${text}`;
+  div.className = "bg-white rounded-lg p-2 shadow border border-purple-300 flex justify-between items-center";
+
+  div.innerHTML = `
+    <span><strong class="text-purple-600">${name}</strong>: ${text}</span>
+    ${nickname === name ? `<button onclick="deleteMessage('${id}')" class="text-red-500 text-sm ml-4">🗑️</button>` : ''}
+  `;
+
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -54,8 +57,8 @@ function appendFile(name, filename, url) {
 }
 
 // ✅ Listen for incoming messages
-socket.on("receive_message", ({ name, text }) => {
-  appendMessage(name, text);
+socket.on("receive_message", ({ _id, name, text }) => {
+  appendMessage(_id, name, text);
 });
 
 // ✅ Listen for shared files
@@ -94,18 +97,32 @@ fileForm.addEventListener("submit", async (e) => {
   fileInput.value = "";
 });
 
-// ✅ Load old messages from server
+// ✅ Delete All Messages
+deleteAllBtn?.addEventListener("click", async () => {
+  if (confirm("Are you sure you want to delete all messages?")) {
+    await fetch('/messages', { method: "DELETE" });
+    chatBox.innerHTML = '';
+  }
+});
+
+// ✅ Delete Single Message
+async function deleteMessage(id) {
+  await fetch(`/messages/${id}`, { method: "DELETE" });
+  chatBox.innerHTML = '';
+  loadChatHistory();
+}
+
+// ✅ Load old messages
 async function loadChatHistory() {
   try {
     const res = await fetch('/messages');
     const messages = await res.json();
-    messages.forEach(msg => appendMessage(msg.name, msg.text));
+    messages.forEach(msg => appendMessage(msg._id, msg.name, msg.text));
   } catch (err) {
     console.error("Failed to load messages", err);
   }
 }
 
-// ✅ Debug socket connection (Optional)
 socket.on("connect", () => {
   console.log("✅ Connected to Socket.IO:", socket.id);
 });
