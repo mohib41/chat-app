@@ -6,9 +6,15 @@ const messageInput = document.getElementById("message-input");
 const chatBox = document.getElementById("chat-box");
 const fileForm = document.getElementById("upload-form");
 const fileInput = document.getElementById("file-input");
-const deleteAllBtn = document.getElementById("delete-all-btn"); // ✅ Button for deleting all
+const deleteAllBtn = document.getElementById("delete-all-btn");
 
 let nickname = "";
+
+// 💕 Nickname Mapping
+const nicknameMap = {
+  mohib: "💖 My King",
+  zainab: "🌸 My Queen"
+};
 
 // ✅ Handle login
 loginBtn.addEventListener("click", async () => {
@@ -38,8 +44,10 @@ function appendMessage(id, name, text) {
   const div = document.createElement("div");
   div.className = "bg-white rounded-lg p-2 shadow border border-purple-300 flex justify-between items-center";
 
+  const displayName = nicknameMap[name] || name;
+
   div.innerHTML = `
-    <span><strong class="text-purple-600">${name}</strong>: ${text}</span>
+    <span><strong class="text-purple-600">${displayName}</strong>: ${text}</span>
     ${nickname === name ? `<button onclick="deleteMessage('${id}')" class="text-red-500 text-sm ml-4">🗑️</button>` : ''}
   `;
 
@@ -51,12 +59,15 @@ function appendMessage(id, name, text) {
 function appendFile(name, filename, url) {
   const div = document.createElement("div");
   div.className = "bg-white rounded-lg p-2 shadow border border-pink-300";
-  div.innerHTML = `<strong class="text-purple-600">${name}</strong> sent: <a href="${url}" download class="text-pink-600 underline">${filename}</a>`;
+
+  const displayName = nicknameMap[name] || name;
+
+  div.innerHTML = `<strong class="text-purple-600">${displayName}</strong> sent: <a href="${url}" download class="text-pink-600 underline">${filename}</a>`;
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// ✅ Listen for incoming messages
+// ✅ Listen for messages
 socket.on("receive_message", ({ _id, name, text }) => {
   appendMessage(_id, name, text);
 });
@@ -66,7 +77,7 @@ socket.on("file_shared", ({ name, filename, url }) => {
   appendFile(name, filename, url);
 });
 
-// ✅ Send a message
+// ✅ Send message
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const msg = messageInput.value.trim();
@@ -76,7 +87,7 @@ chatForm.addEventListener("submit", (e) => {
   }
 });
 
-// ✅ Upload and share a file
+// ✅ Upload and share file
 fileForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const file = fileInput.files[0];
@@ -112,7 +123,7 @@ async function deleteMessage(id) {
   loadChatHistory();
 }
 
-// ✅ Load old messages
+// ✅ Load message history
 async function loadChatHistory() {
   try {
     const res = await fetch('/messages');
@@ -123,6 +134,7 @@ async function loadChatHistory() {
   }
 }
 
+// ✅ Debugging
 socket.on("connect", () => {
   console.log("✅ Connected to Socket.IO:", socket.id);
 });
