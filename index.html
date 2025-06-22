@@ -8,59 +8,54 @@
   <script src="/socket.io/socket.io.js"></script>
   <style>
     body {
-      background: linear-gradient(to bottom right, #ffe6f0, #f5d0fe);
+      background-color: #121212;
+      color: white;
       font-family: 'Segoe UI', sans-serif;
     }
     #chat-box::-webkit-scrollbar {
       width: 6px;
     }
     #chat-box::-webkit-scrollbar-thumb {
-      background-color: #ec4899;
+      background-color: #e50914;
       border-radius: 3px;
     }
   </style>
 </head>
-<body class="text-pink-800 flex flex-col min-h-screen justify-center items-center px-4">
+<body class="flex flex-col min-h-screen justify-center items-center px-4 bg-black text-white">
 
   <!-- Login Section -->
-  <div id="login-section" class="flex flex-col items-center space-y-4 w-full max-w-sm p-6 rounded-lg shadow-xl bg-white/80 backdrop-blur mt-12">
-    <h1 class="text-3xl font-bold text-purple-700">💕 Welcome to LoveChat</h1>
-    <input id="username" type="text" placeholder="Your name"
-      class="p-2 rounded border w-full bg-white text-black placeholder-pink-400"/>
-    <input id="password" type="password" placeholder="Password"
-      class="p-2 rounded border w-full bg-white text-black placeholder-pink-400"/>
-    <button id="login-btn" class="bg-gradient-to-r from-red-400 to-pink-500 hover:from-pink-500 hover:to-purple-500 text-white px-6 py-2 rounded-full shadow-md">
-      💌 Login
-    </button>
-    <p id="login-error" class="text-red-500 hidden">Wrong name or password 😔</p>
+  <div id="login-section" class="flex flex-col items-center space-y-4 w-full max-w-sm p-6 rounded-lg shadow-xl bg-gray-900 mt-12">
+    <h1 class="text-3xl font-bold text-red-600">💕 LoveChat</h1>
+    <input id="username" type="text" placeholder="Your name" class="p-2 rounded border w-full text-black placeholder-gray-400"/>
+    <input id="password" type="password" placeholder="Password" class="p-2 rounded border w-full text-black placeholder-gray-400"/>
+    <button id="login-btn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full shadow-md">💌 Login</button>
+    <p id="login-error" class="text-red-400 hidden">Wrong name or password 😔</p>
   </div>
 
   <!-- Chat Section -->
   <div id="chat-section" class="hidden flex flex-col h-screen max-w-2xl w-full">
-    <div class="text-white bg-gradient-to-r from-red-400 to-pink-500 text-center p-4 rounded-t-lg shadow-lg">
+    <div class="bg-red-700 text-center p-4 rounded-t-lg">
       <h2 class="text-2xl font-bold">💑 You & Me</h2>
     </div>
 
-    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white/70 backdrop-blur rounded-b-lg shadow-inner"></div>
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-800"></div>
 
-    <form id="chat-form" class="p-4 flex gap-2 bg-white border-t border-pink-300">
-      <input id="message-input" type="text" placeholder="Say something sweet 💬"
-        class="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-pink-400 text-black"/>
-      <button class="bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-full shadow-md">Send 💌</button>
+    <form id="chat-form" class="p-4 flex gap-2 bg-black border-t border-gray-700">
+      <input id="message-input" type="text" placeholder="Say something 💬"
+        class="flex-1 p-2 rounded-full text-black" />
+      <button class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-full shadow-md">Send 💌</button>
     </form>
 
-    <form id="upload-form" class="p-4 flex gap-2 bg-white border-t border-pink-200">
-      <input type="file" id="file-input" class="text-sm text-pink-800 file:bg-pink-100 file:border file:rounded file:px-2 file:py-1"/>
-      <button class="bg-pink-400 hover:bg-pink-500 text-white px-4 py-2 rounded-full">Upload 📎</button>
+    <form id="upload-form" class="p-4 flex gap-2 bg-black border-t border-gray-700">
+      <input type="file" id="file-input" class="text-sm text-white"/>
+      <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full">Upload 📎</button>
     </form>
-    <div class="p-4 bg-white flex justify-center">
-  <button id="delete-all-btn" class="bg-red-400 hover:bg-red-500 text-white px-4 py-2 rounded-full shadow-md">
-    ❌ Delete All Messages
-  </button>
-</div>
 
+    <div class="p-4 bg-black flex justify-center">
+      <button id="delete-all-btn" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded-full">❌ Delete All</button>
+    </div>
 
-    <footer class="bg-pink-100 text-center p-2 text-sm text-pink-700 font-medium">
+    <footer class="bg-black text-center p-2 text-sm text-gray-400">
       Made with ❤️ just for you
     </footer>
   </div>
