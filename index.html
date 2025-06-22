@@ -3,60 +3,65 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>💕 Just Us</title>
+  <title>💕 LoveChat</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     body {
-      background-color: #121212;
-      color: white;
+      background: linear-gradient(to right, #f8e1f4, #e3f0ff);
       font-family: 'Segoe UI', sans-serif;
     }
     #chat-box::-webkit-scrollbar {
       width: 6px;
     }
     #chat-box::-webkit-scrollbar-thumb {
-      background-color: #e50914;
+      background-color: #b197fc;
       border-radius: 3px;
     }
   </style>
 </head>
-<body class="flex flex-col min-h-screen justify-center items-center px-4 bg-black text-white">
+<body class="text-gray-800 flex flex-col min-h-screen justify-center items-center px-4">
 
   <!-- Login Section -->
-  <div id="login-section" class="flex flex-col items-center space-y-4 w-full max-w-sm p-6 rounded-lg shadow-xl bg-gray-900 mt-12">
-    <h1 class="text-3xl font-bold text-red-600">💕 LoveChat</h1>
-    <input id="username" type="text" placeholder="Your name" class="p-2 rounded border w-full text-black placeholder-gray-400"/>
-    <input id="password" type="password" placeholder="Password" class="p-2 rounded border w-full text-black placeholder-gray-400"/>
-    <button id="login-btn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full shadow-md">💌 Login</button>
-    <p id="login-error" class="text-red-400 hidden">Wrong name or password 😔</p>
+  <div id="login-section" class="flex flex-col items-center space-y-4 w-full max-w-sm p-6 rounded-lg shadow-xl bg-white/80 backdrop-blur mt-12">
+    <h1 class="text-3xl font-bold text-indigo-600">💕 Welcome to LoveChat</h1>
+    <input id="username" type="text" placeholder="Your name"
+      class="p-2 rounded border w-full text-black placeholder-gray-400"/>
+    <input id="password" type="password" placeholder="Password"
+      class="p-2 rounded border w-full text-black placeholder-gray-400"/>
+    <button id="login-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2 rounded-full shadow-md">
+      💌 Login
+    </button>
+    <p id="login-error" class="text-red-500 hidden">Wrong name or password 😔</p>
   </div>
 
   <!-- Chat Section -->
   <div id="chat-section" class="hidden flex flex-col h-screen max-w-2xl w-full">
-    <div class="bg-red-700 text-center p-4 rounded-t-lg">
+    <div class="text-white bg-indigo-500 text-center p-4 rounded-t-lg shadow-lg">
       <h2 class="text-2xl font-bold">💑 You & Me</h2>
     </div>
 
-    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-800"></div>
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white/70 backdrop-blur rounded-b-lg shadow-inner"></div>
 
-    <form id="chat-form" class="p-4 flex gap-2 bg-black border-t border-gray-700">
-      <input id="message-input" type="text" placeholder="Say something 💬"
-        class="flex-1 p-2 rounded-full text-black" />
-      <button class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-full shadow-md">Send 💌</button>
+    <form id="chat-form" class="p-4 flex gap-2 bg-white border-t border-indigo-200">
+      <input id="message-input" type="text" placeholder="Say something sweet 💬"
+        class="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black"/>
+      <button class="bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-full shadow-md">Send 💌</button>
     </form>
 
-    <form id="upload-form" class="p-4 flex gap-2 bg-black border-t border-gray-700">
-      <input type="file" id="file-input" class="text-sm text-white"/>
-      <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full">Upload 📎</button>
+    <form id="upload-form" class="p-4 flex gap-2 bg-white border-t border-indigo-100">
+      <input type="file" id="file-input" class="text-sm text-indigo-800 file:bg-indigo-100 file:border file:rounded file:px-2 file:py-1"/>
+      <button class="bg-indigo-400 hover:bg-indigo-500 text-white px-4 py-2 rounded-full">Upload 📎</button>
     </form>
 
-    <div class="p-4 bg-black flex justify-center">
-      <button id="delete-all-btn" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded-full">❌ Delete All</button>
+    <div class="p-4 bg-white flex justify-center">
+      <button id="delete-all-btn" class="bg-red-400 hover:bg-red-500 text-white px-4 py-2 rounded-full shadow-md">
+        ❌ Delete All
+      </button>
     </div>
 
-    <footer class="bg-black text-center p-2 text-sm text-gray-400">
-      Made with ❤️ just for you
+    <footer class="bg-indigo-100 text-center p-2 text-sm text-indigo-700 font-medium">
+      Made with 💖 just for you
     </footer>
   </div>
 
