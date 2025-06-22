@@ -9,15 +9,16 @@ const mongoose = require('mongoose');
 const app = express();
 const server = http.createServer(app);
 
-// Serve frontend (index.html and main.js)
+// Serve static files (HTML, JS, uploads)
 app.use(express.static(path.join(__dirname)));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection (from Render environment variable)
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lovechat');
 
-// Schema for chat messages
+// MongoDB Message Schema
 const messageSchema = new mongoose.Schema({
   name: String,
   text: String,
@@ -25,11 +26,19 @@ const messageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', messageSchema);
 
-// Multer setup for file upload
-const upload = multer({ dest: 'uploads/' });
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// ✅ Configure multer to save original file names
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + '-' + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+const upload = multer({ storage });
 
-// Login Auth (local)
+// 🔐 Simple local login system
 const USERS = {
   mohib: "zainab",
   zainab: "mohib",
@@ -44,25 +53,25 @@ app.post('/login', (req, res) => {
   }
 });
 
-// File upload route
+// 📁 File upload route
 app.post('/upload', upload.single('file'), (req, res) => {
   const file = req.file;
   const url = `/uploads/${file.filename}`;
   res.json({ url });
 });
 
-// Chat history endpoint
+// 🕓 Load recent chat messages
 app.get('/messages', async (req, res) => {
   const messages = await Message.find().sort({ timestamp: 1 }).limit(100);
   res.json(messages);
 });
 
-// Serve index.html for root route
+// 🏠 Serve the main HTML page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Socket.IO setup
+// 🔌 Socket.IO setup
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -86,8 +95,7 @@ io.on("connection", socket => {
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+// 🚀 Start the server
+server.listen(3000, () => {
+  console.log("✅ Server running on http://localhost:3000");
 });
