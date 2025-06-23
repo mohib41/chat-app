@@ -2,111 +2,57 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>💕 LoveChat</title>
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoveChat 💕</title>
+  <link rel="manifest" href="/manifest.json" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#8b5cf6">
-<!-- ✅ OneSignal SDK -->
-<!-- OneSignal Push Notification -->
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "d7759f41-568b-4305-a472-71a8bb59819f",
-      notifyButton: {
-        enable: true
-      }
-    });
-
-    // Trigger subscription manually
-    OneSignal.showSlidedownPrompt().catch(console.error);
-  });
-</script>
-
-<style>
+  <link rel="icon" href="/icon-192.png" type="image/png">
+  <style>
     body {
-      background: linear-gradient(to right, #f8e1f4, #e3f0ff);
-      font-family: 'Segoe UI', sans-serif;
+      background-color: #000;
     }
-    #chat-box::-webkit-scrollbar {
-      width: 6px;
+    .chat-card {
+      background-color: #1f1f1f;
     }
-    #chat-box::-webkit-scrollbar-thumb {
-      background-color: #b197fc;
-      border-radius: 3px;
-    }
-    #toast {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      background-color: #7c3aed;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-      z-index: 50;
-      display: none;
+    .nav-btn {
+      color: #e50914;
+      font-size: 1.5rem;
     }
   </style>
 </head>
-<body class="text-gray-800 flex flex-col min-h-screen justify-center items-center px-4">
+<body class="text-white flex flex-col h-screen font-sans">
 
-  <audio id="notify-sound" src="notify.mp3" preload="auto"></audio>
+  <!-- Top: Stories -->
+  <div class="p-3 overflow-x-auto flex space-x-4 bg-[#121212] shadow">
+    <div id="stories" class="flex space-x-4"></div>
+    <button id="upload-story" class="text-[#e50914] font-bold">➕ Story</button>
+  </div>
 
-  <!-- Toast -->
-  <div id="toast"></div>
+  <!-- Chat List -->
+  <div id="chat-list" class="flex-1 overflow-y-auto p-4 space-y-3">
+    <!-- Chat previews dynamically inserted here -->
+  </div>
+
+  <!-- Bottom Navbar -->
+  <div class="fixed bottom-0 left-0 right-0 flex justify-around items-center p-3 bg-[#121212] border-t border-gray-800">
+    <button class="nav-btn" onclick="showSection('chats')">💬</button>
+    <button class="nav-btn" onclick="showSection('contacts')">👥</button>
+    <button id="upload-btn" class="bg-[#e50914] text-white px-4 py-2 rounded-full">➕</button>
+    <button class="nav-btn">🔔</button>
+    <button class="nav-btn" onclick="showSection('profile')">👤</button>
+  </div>
 
   <!-- Login Section -->
-  <div id="login-section" class="flex flex-col items-center space-y-4 w-full max-w-sm p-6 rounded-lg shadow-xl bg-white/80 backdrop-blur mt-12">
-    <h1 class="text-3xl font-bold text-indigo-600">💕 Welcome to LoveChat</h1>
-    <input id="username" type="text" placeholder="Your name" class="p-2 rounded border w-full text-black placeholder-gray-400"/>
-    <input id="password" type="password" placeholder="Password" class="p-2 rounded border w-full text-black placeholder-gray-400"/>
-    <button id="login-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2 rounded-full shadow-md">💌 Login</button>
-    <p id="login-error" class="text-red-500 hidden">Wrong name or password 😔</p>
+  <div id="login-section" class="absolute inset-0 bg-black p-6 flex flex-col justify-center items-center">
+    <h1 class="text-3xl font-bold mb-4 text-[#e50914]">💕 LoveChat Login</h1>
+    <input id="username" type="text" placeholder="Username" class="mb-2 p-2 border border-gray-700 rounded w-full max-w-xs bg-[#121212] text-white" />
+    <input id="password" type="password" placeholder="Password" class="mb-4 p-2 border border-gray-700 rounded w-full max-w-xs bg-[#121212] text-white" />
+    <button id="login-btn" class="bg-[#e50914] text-white px-6 py-2 rounded">Login</button>
+    <p id="login-error" class="text-red-500 hidden mt-2">Wrong username or password</p>
   </div>
 
-  <!-- Chat Section -->
-  <div id="chat-section" class="hidden flex flex-col h-screen max-w-2xl w-full">
-    <div class="text-white bg-indigo-500 text-center p-4 rounded-t-lg shadow-lg flex justify-between items-center">
-      <h2 class="text-2xl font-bold">💑 Private Chat</h2>
-      <div class="text-sm text-white" id="online-users">Online:</div>
-    </div>
-
-    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white/70 backdrop-blur rounded-b-lg shadow-inner"></div>
-
-    <div class="px-4 py-2 text-sm text-gray-600" id="typing-indicator"></div>
-
-    <form id="chat-form" class="p-4 flex gap-2 bg-white border-t border-indigo-200">
-      <input id="message-input" type="text" placeholder="Say something sweet 💬"
-        class="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black"/>
-      <button class="bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-full shadow-md">Send 💌</button>
-    </form>
-
-    <form id="upload-form" class="p-4 flex flex-col sm:flex-row gap-2 bg-white border-t border-indigo-100 items-center sm:items-stretch">
-      <input type="file" id="file-input" class="text-sm text-indigo-800 file:bg-indigo-100 file:border file:rounded file:px-2 file:py-1"/>
-      <button class="bg-indigo-400 hover:bg-indigo-500 text-white px-4 py-2 rounded-full w-full sm:w-auto">Upload 📎</button>
-    </form>
-
-    <div class="p-2 text-center">
-      <label class="text-sm text-gray-700">
-        <input type="checkbox" id="privacy-toggle" class="mr-1" />
-        Hide message content in popup
-      </label>
-    </div>
-
-    <div class="p-4 bg-white flex justify-center">
-      <button id="delete-all-btn" class="bg-red-400 hover:bg-red-500 text-white px-4 py-2 rounded-full shadow-md">❌ Delete All</button>
-    </div>
-
-    <footer class="bg-indigo-100 text-center p-2 text-sm text-indigo-700 font-medium">
-      Made with 💖 just for you
-    </footer>
-  </div>
-
+  <audio id="notify-sound" src="/notify.mp3" preload="auto"></audio>
   <script src="main.js"></script>
 </body>
 </html>

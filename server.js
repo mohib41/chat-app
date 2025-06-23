@@ -1,91 +1,134 @@
 const express = require('express');
 const http = require('http');
-const cors = require('cors');
 const { Server } = require('socket.io');
+const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
-const mongoose = require('mongoose');
-
+const cors = require('cors');
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server);
+
+require('dotenv').config();
+
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname)));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ✅ MongoDB Setup
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lovechat');
 
-// Mongo Schema
-const messageSchema = new mongoose.Schema({
-  name: String, text: String, timestamp: { type: Date, default: Date.now }
+// ✅ Schemas
+const userSchema = new mongoose.Schema({
+  name: String,
+  avatarUrl: String,
+  password: String
 });
-const Message = mongoose.model('Message', messageSchema);
+const chatSchema = new mongoose.Schema({
+  users: [String],
+  messages: [{
+    sender: String,
+    text: String,
+    timestamp: { type: Date, default: Date.now }
+  }]
+});
+const storySchema = new mongoose.Schema({
+  name: String,
+  avatarUrl: String,
+  timestamp: { type: Date, default: Date.now }
+});
 
-// Upload Setup
+const User = mongoose.model('User', userSchema);
+const Chat = mongoose.model('Chat', chatSchema);
+const Story = mongoose.model('Story', storySchema);
+
+// ✅ Dummy login credentials (replace with DB for real app)
+const USERS = {
+  mohib: "zainab",
+  zainab: "mohib"
+};
+
+// ✅ Multer Storage for avatars/stories
 const storage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, 'uploads/'),
-  filename: (_, file, cb) => {
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+    const base = path.basename(file.originalname, ext);
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${base}-${unique}${ext}`);
   }
 });
 const upload = multer({ storage });
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(__dirname));
 
-// Local Auth
-const USERS = { mohib: "zainab", zainab: "mohib", bob: "bob", alice: "alice" };
-app.post('/login', (req, res) => {
+// ✅ Routes
+
+app.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  if (USERS[username] === password) res.sendStatus(200);
-  else res.sendStatus(401);
-});
-
-// Upload
-app.post('/upload', upload.single('file'), (req, res) => {
-  res.json({ url: `/uploads/${req.file.filename}` });
-});
-
-// Messages
-app.get('/messages', async (_, res) => {
-  const messages = await Message.find().sort({ timestamp: 1 }).limit(100);
-  res.json(messages);
-});
-app.delete('/messages', async (_, res) => { await Message.deleteMany({}); res.sendStatus(200); });
-app.delete('/messages/:id', async (req, res) => { await Message.findByIdAndDelete(req.params.id); res.sendStatus(200); });
-
-// Socket.IO
-const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
-let onlineUsers = [];
-
-io.on("connection", (socket) => {
-  socket.on("user_connected", (name) => {
-    socket.username = name;
-    if (!onlineUsers.includes(name)) onlineUsers.push(name);
-    io.emit("online_users", onlineUsers);
-  });
-
-  socket.on("send_message", async (data) => {
-    const newMsg = new Message(data);
-    await newMsg.save();
-    io.emit("receive_message", data);
-  });
-
-  socket.on("share_file", (data) => {
-    io.emit("file_shared", data);
-  });
-
-  socket.on("typing", (name) => {
-    socket.broadcast.emit("typing", name);
-  });
-
-  socket.on("disconnect", () => {
-    if (socket.username) {
-      onlineUsers = onlineUsers.filter(user => user !== socket.username);
-      io.emit("online_users", onlineUsers);
+  if (USERS[username] === password) {
+    // save user to DB if not exist
+    let user = await User.findOne({ name: username });
+    if (!user) {
+      user = new User({ name: username, avatarUrl: `/uploads/default.png`, password });
+      await user.save();
     }
+    return res.sendStatus(200);
+  }
+  res.sendStatus(401);
+});
+
+app.get('/chats', async (req, res) => {
+  const chats = await Chat.find();
+  const result = chats.map(chat => {
+    const lastMessage = chat.messages[chat.messages.length - 1];
+    return {
+      name: chat.users.find(u => u !== "mohib" && u !== "zainab") || "Unknown",
+      lastMessage: lastMessage ? lastMessage.text : "Start chatting"
+    };
+  });
+  res.json(result);
+});
+
+app.get('/stories', async (req, res) => {
+  const stories = await Story.find().sort({ timestamp: -1 }).limit(10);
+  res.json(stories);
+});
+
+app.post('/upload-story', upload.single('story'), async (req, res) => {
+  const file = req.file;
+  const name = req.body.name || "anonymous";
+  const avatarUrl = `/uploads/${file.filename}`;
+  const story = new Story({ name, avatarUrl });
+  await story.save();
+  res.sendStatus(200);
+});
+
+// ✅ Socket.IO Logic
+
+io.on('connection', socket => {
+  console.log('✅ New client connected');
+
+  socket.on("user_connected", async (name) => {
+    console.log(name, 'connected');
+    socket.join(name); // allow DMs
+  });
+
+  socket.on("send_message", async ({ to, from, text }) => {
+    // Save chat to DB
+    let chat = await Chat.findOne({ users: { $all: [to, from] } });
+    if (!chat) {
+      chat = new Chat({ users: [to, from], messages: [] });
+    }
+    chat.messages.push({ sender: from, text });
+    await chat.save();
+
+    // Emit to recipient
+    io.to(to).emit("receive_message", { name: from, text });
   });
 });
 
-// Start
+// ✅ Start Server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
