@@ -10,24 +10,20 @@
   <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#8b5cf6">
 <!-- ✅ OneSignal SDK -->
-<script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
+<!-- OneSignal Push Notification -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
-  window.OneSignal = window.OneSignal || [];
-  OneSignal.push(function () {
-    OneSignal.init({
-      appId: "d7759f41-568b-4305-a472-71a8bb59819f", // Your real app ID
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "d7759f41-568b-4305-a472-71a8bb59819f",
       notifyButton: {
-        enable: true, // Show bell
+        enable: true, // shows bell icon on site (optional)
       },
-      allowLocalhostAsSecureOrigin: true,
-    });
-
-    OneSignal.isPushNotificationsEnabled().then(function (enabled) {
-      console.log("Push Enabled? ", enabled);
+      safari_web_id: "", // leave blank unless using Safari
     });
   });
 </script>
-
 
 <style>
     body {
