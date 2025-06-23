@@ -10,16 +10,6 @@
   <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#8b5cf6">
 
-  <!-- OneSignal SDK -->
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "d7759f41-568b-4305-a472-71a8bb59819f",
-    });
-  });
-</script>
 
   <style>
     body {
@@ -102,5 +92,21 @@
   </div>
 
   <script src="main.js"></script>
+
+  <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
+<script>
+  window.OneSignal = window.OneSignal || [];
+  OneSignal.push(function () {
+    OneSignal.init({
+      appId: "d7759f41-568b-4305-a472-71a8bb59819f", // 👈 replace this with real App ID
+      notifyButton: {
+        enable: true
+      },
+      allowLocalhostAsSecureOrigin: true, // for local dev
+    });
+  });
+</script>
+
+
 </body>
 </html>
