@@ -18,10 +18,12 @@
     await OneSignal.init({
       appId: "d7759f41-568b-4305-a472-71a8bb59819f",
       notifyButton: {
-        enable: true, // shows bell icon on site (optional)
-      },
-      safari_web_id: "", // leave blank unless using Safari
+        enable: true
+      }
     });
+
+    // Trigger subscription manually
+    OneSignal.showSlidedownPrompt().catch(console.error);
   });
 </script>
 
