@@ -7,10 +7,12 @@ const fileForm = document.getElementById("upload-form");
 const fileInput = document.getElementById("file-input");
 const deleteAllBtn = document.getElementById("delete-all-btn");
 const typingIndicator = document.getElementById("typing-indicator");
-const notifySound = document.getElementById("notify-sound");
 const toast = document.getElementById("toast");
 const privacyToggle = document.getElementById("privacy-toggle");
 const onlineUsersDiv = document.getElementById("online-users");
+
+// ✅ Sound file loaded
+const notifySound = new Audio('/notify.mp3');
 
 let nickname = "";
 let typingTimeout;
@@ -126,7 +128,7 @@ socket.on("receive_message", ({ _id, name, text }) => {
   if (name !== nickname) {
     if (!privacyToggle.checked) showToast(nicknameMap[name] || name, text);
     else showToast(nicknameMap[name] || name, null);
-    notifySound.play().catch(() => {});
+    notifySound.play().catch(() => {}); // ✅ Play sound
   }
 });
 
@@ -135,7 +137,7 @@ socket.on("file_shared", ({ name, filename, url }) => {
   appendFile(name, filename, url);
   if (name !== nickname) {
     showToast(nicknameMap[name] || name, `📎 ${filename}`);
-    notifySound.play().catch(() => {});
+    notifySound.play().catch(() => {}); // ✅ Play sound
   }
 });
 
