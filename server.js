@@ -98,6 +98,10 @@ io.on("connection", (socket) => {
     io.emit("file_shared", data);
   });
 
+  socket.on("typing", ({ name, isTyping }) => {
+    socket.broadcast.emit("typing", { name, isTyping });
+  });
+
   socket.on("disconnect", () => {
     onlineUsers = onlineUsers.filter(name => name !== socket.username);
     io.emit("update_online_users", onlineUsers);

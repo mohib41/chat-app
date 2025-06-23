@@ -9,10 +9,10 @@ const fileInput = document.getElementById("file-input");
 const deleteAllBtn = document.getElementById("delete-all-btn");
 const notificationSound = document.getElementById("notification-sound");
 const onlineUsersDiv = document.getElementById("online-users");
+const typingStatus = document.getElementById("typing-status");
 
 let nickname = "";
 
-// ✅ Nickname display customization
 const nicknameMap = {
   mohib: "💖 My King",
   zainab: "🌸 My Queen"
@@ -50,6 +50,7 @@ function appendMessage(id, name, text) {
 
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
+
   if (name !== nickname) notificationSound.play();
 }
 
@@ -62,16 +63,9 @@ function appendFile(name, filename, url) {
 
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
+
   if (name !== nickname) notificationSound.play();
 }
-
-socket.on("receive_message", ({ _id, name, text }) => {
-  appendMessage(_id, name, text);
-});
-
-socket.on("file_shared", ({ name, filename, url }) => {
-  appendFile(name, filename, url);
-});
 
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -79,7 +73,12 @@ chatForm.addEventListener("submit", (e) => {
   if (msg !== "") {
     socket.emit("send_message", { name: nickname, text: msg });
     messageInput.value = "";
+    socket.emit("typing", { name: nickname, isTyping: false });
   }
+});
+
+messageInput.addEventListener("input", () => {
+  socket.emit("typing", { name: nickname, isTyping: messageInput.value.trim().length > 0 });
 });
 
 fileForm.addEventListener("submit", async (e) => {
@@ -125,11 +124,23 @@ async function loadChatHistory() {
   }
 }
 
-// Online users update
+socket.on("receive_message", ({ _id, name, text }) => {
+  appendMessage(_id, name, text);
+});
+
+socket.on("file_shared", ({ name, filename, url }) => {
+  appendFile(name, filename, url);
+});
+
 socket.on("update_online_users", (users) => {
   onlineUsersDiv.innerHTML = `Online: ${users.join(", ")}`;
 });
 
-socket.on("connect", () => {
-  console.log("✅ Connected to Socket.IO:", socket.id);
+socket.on("typing", ({ name, isTyping }) => {
+  if (isTyping && name !== nickname) {
+    typingStatus.innerText = `${name} is typing...`;
+    typingStatus.classList.remove("hidden");
+  } else {
+    typingStatus.classList.add("hidden");
+  }
 });
