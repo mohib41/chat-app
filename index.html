@@ -11,29 +11,23 @@
 <meta name="theme-color" content="#8b5cf6">
 <!-- ✅ OneSignal SDK -->
 <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
-
 <script>
   window.OneSignal = window.OneSignal || [];
-  OneSignal.push(function() {
+  OneSignal.push(function () {
     OneSignal.init({
-      appId: "d7759f41-568b-4305-a472-71a8bb59819f", // Your real App ID
+      appId: "d7759f41-568b-4305-a472-71a8bb59819f", // Your real app ID
       notifyButton: {
-        enable: true
+        enable: true, // Show bell
       },
-      allowLocalhostAsSecureOrigin: true
+      allowLocalhostAsSecureOrigin: true,
     });
 
-    // ✅ Check if push is enabled
-    OneSignal.isPushNotificationsEnabled().then(function(enabled) {
-      console.log("✅ Push enabled?", enabled);
-      if (!enabled) {
-        OneSignal.showSlidedownPrompt(); // Ask permission
-      }
-    }).catch(function(e) {
-      console.error("❌ Error checking push:", e);
+    OneSignal.isPushNotificationsEnabled().then(function (enabled) {
+      console.log("Push Enabled? ", enabled);
     });
   });
 </script>
+
 
 <style>
     body {
