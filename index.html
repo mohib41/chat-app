@@ -1,58 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LoveChat 💕</title>
-  <link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoveChat DM</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <link rel="icon" href="/icon-192.png" type="image/png">
+  <link rel="manifest" href="/manifest.json">
   <style>
     body {
-      background-color: #000;
+      background: #000;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
     }
-    .chat-card {
-      background-color: #1f1f1f;
+    .chat-card:hover {
+      background-color: #111;
     }
-    .nav-btn {
-      color: #e50914;
-      font-size: 1.5rem;
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      right: 10px;
+      background: #e50914;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      display: none;
+      z-index: 1000;
     }
   </style>
 </head>
-<body class="text-white flex flex-col h-screen font-sans">
+<body class="min-h-screen flex flex-col">
 
-  <!-- Top: Stories -->
-  <div class="p-3 overflow-x-auto flex space-x-4 bg-[#121212] shadow">
+<!-- ✅ Login -->
+<div id="login-section" class="flex flex-col items-center justify-center p-6 h-screen">
+  <h1 class="text-4xl font-bold text-[#e50914] mb-6">LoveChat 💖</h1>
+  <input id="username" type="text" placeholder="Username" class="mb-3 px-4 py-2 rounded bg-white text-black w-64">
+  <input id="password" type="password" placeholder="Password" class="mb-3 px-4 py-2 rounded bg-white text-black w-64">
+  <button id="login-btn" class="bg-[#e50914] text-white px-6 py-2 rounded-full">Login</button>
+  <p id="login-error" class="text-red-400 mt-3 hidden">Wrong credentials 😢</p>
+</div>
+
+<!-- ✅ Stories and Chat List -->
+<div id="main-section" class="hidden flex flex-col p-4">
+  <!-- Stories Bar -->
+  <div class="flex space-x-4 overflow-x-auto pb-4">
+    <input type="file" id="upload-story" class="hidden">
+    <label for="upload-story">
+      <div class="w-14 h-14 bg-gray-600 rounded-full flex items-center justify-center text-white text-xl">+</div>
+    </label>
     <div id="stories" class="flex space-x-4"></div>
-    <button id="upload-story" class="text-[#e50914] font-bold">➕ Story</button>
   </div>
 
   <!-- Chat List -->
-  <div id="chat-list" class="flex-1 overflow-y-auto p-4 space-y-3">
-    <!-- Chat previews dynamically inserted here -->
-  </div>
+  <div id="chat-list" class="mt-4 space-y-3"></div>
+</div>
 
-  <!-- Bottom Navbar -->
-  <div class="fixed bottom-0 left-0 right-0 flex justify-around items-center p-3 bg-[#121212] border-t border-gray-800">
-    <button class="nav-btn" onclick="showSection('chats')">💬</button>
-    <button class="nav-btn" onclick="showSection('contacts')">👥</button>
-    <button id="upload-btn" class="bg-[#e50914] text-white px-4 py-2 rounded-full">➕</button>
-    <button class="nav-btn">🔔</button>
-    <button class="nav-btn" onclick="showSection('profile')">👤</button>
-  </div>
+<!-- ✅ Toast + Sound -->
+<div id="toast"></div>
+<audio id="notify-sound" src="/notify.mp3" preload="auto"></audio>
 
-  <!-- Login Section -->
-  <div id="login-section" class="absolute inset-0 bg-black p-6 flex flex-col justify-center items-center">
-    <h1 class="text-3xl font-bold mb-4 text-[#e50914]">💕 LoveChat Login</h1>
-    <input id="username" type="text" placeholder="Username" class="mb-2 p-2 border border-gray-700 rounded w-full max-w-xs bg-[#121212] text-white" />
-    <input id="password" type="password" placeholder="Password" class="mb-4 p-2 border border-gray-700 rounded w-full max-w-xs bg-[#121212] text-white" />
-    <button id="login-btn" class="bg-[#e50914] text-white px-6 py-2 rounded">Login</button>
-    <p id="login-error" class="text-red-500 hidden mt-2">Wrong username or password</p>
-  </div>
-
-  <audio id="notify-sound" src="/notify.mp3" preload="auto"></audio>
-  <script src="main.js"></script>
+<script src="main.js"></script>
 </body>
 </html>

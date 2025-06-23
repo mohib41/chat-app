@@ -1,129 +1,84 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const mongoose = require('mongoose');
+const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const cors = require('cors');
+const fs = require('fs');
+const mongoose = require('mongoose');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-require('dotenv').config();
-
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(__dirname));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ✅ MongoDB Setup
+// MongoDB
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lovechat');
 
-// ✅ Schemas
-const userSchema = new mongoose.Schema({
-  name: String,
-  avatarUrl: String,
-  password: String
-});
-const chatSchema = new mongoose.Schema({
-  users: [String],
-  messages: [{
-    sender: String,
-    text: String,
-    timestamp: { type: Date, default: Date.now }
-  }]
-});
 const storySchema = new mongoose.Schema({
-  name: String,
-  avatarUrl: String,
+  username: String,
+  image: String,
   timestamp: { type: Date, default: Date.now }
 });
-
-const User = mongoose.model('User', userSchema);
-const Chat = mongoose.model('Chat', chatSchema);
 const Story = mongoose.model('Story', storySchema);
 
-// ✅ Dummy login credentials (replace with DB for real app)
+// Fake users (can be extended later)
 const USERS = {
-  mohib: "zainab",
-  zainab: "mohib"
+  mohib: { password: "zainab", nickname: "💖 My King", avatar: "https://i.pravatar.cc/150?img=3" },
+  zainab: { password: "mohib", nickname: "🌸 My Queen", avatar: "https://i.pravatar.cc/150?img=5" },
+  alice: { password: "123", nickname: "🎀 Alice", avatar: "https://i.pravatar.cc/150?img=1" },
+  bob:   { password: "456", nickname: "🎩 Bob", avatar: "https://i.pravatar.cc/150?img=2" }
 };
 
-// ✅ Multer Storage for avatars/stories
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext);
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `${base}-${unique}${ext}`);
-  }
-});
-const upload = multer({ storage });
-
-// ✅ Routes
-
-app.post('/login', async (req, res) => {
+// ✅ Login
+app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (USERS[username] === password) {
-    // save user to DB if not exist
-    let user = await User.findOne({ name: username });
-    if (!user) {
-      user = new User({ name: username, avatarUrl: `/uploads/default.png`, password });
-      await user.save();
-    }
-    return res.sendStatus(200);
+  if (USERS[username]?.password === password) {
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(401);
   }
-  res.sendStatus(401);
 });
 
-app.get('/chats', async (req, res) => {
-  const chats = await Chat.find();
-  const result = chats.map(chat => {
-    const lastMessage = chat.messages[chat.messages.length - 1];
-    return {
-      name: chat.users.find(u => u !== "mohib" && u !== "zainab") || "Unknown",
-      lastMessage: lastMessage ? lastMessage.text : "Start chatting"
-    };
-  });
+// ✅ Get all users (for chat list)
+app.get('/users', (req, res) => {
+  const result = Object.keys(USERS).map(key => ({
+    username: key,
+    nickname: USERS[key].nickname,
+    avatar: USERS[key].avatar
+  }));
   res.json(result);
 });
 
+// ✅ Get stories
 app.get('/stories', async (req, res) => {
-  const stories = await Story.find().sort({ timestamp: -1 }).limit(10);
-  res.json(stories);
+  const data = await Story.find().sort({ timestamp: -1 }).limit(20);
+  res.json(data);
 });
 
-app.post('/upload-story', upload.single('story'), async (req, res) => {
-  const file = req.file;
-  const name = req.body.name || "anonymous";
-  const avatarUrl = `/uploads/${file.filename}`;
-  const story = new Story({ name, avatarUrl });
-  await story.save();
+// ✅ Upload stories
+const storyStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const uploadStory = multer({ storage: storyStorage });
+
+app.post('/upload-story', uploadStory.single('story'), async (req, res) => {
+  const username = req.body.username;
+  const image = `/uploads/${req.file.filename}`;
+  await new Story({ username, image }).save();
   res.sendStatus(200);
 });
 
-// ✅ Socket.IO Logic
-
-io.on('connection', socket => {
-  console.log('✅ New client connected');
-
-  socket.on("user_connected", async (name) => {
-    console.log(name, 'connected');
-    socket.join(name); // allow DMs
-  });
-
-  socket.on("send_message", async ({ to, from, text }) => {
-    // Save chat to DB
-    let chat = await Chat.findOne({ users: { $all: [to, from] } });
-    if (!chat) {
-      chat = new Chat({ users: [to, from], messages: [] });
-    }
-    chat.messages.push({ sender: from, text });
-    await chat.save();
-
-    // Emit to recipient
-    io.to(to).emit("receive_message", { name: from, text });
+// ✅ Socket.IO
+io.on('connection', (socket) => {
+  socket.on("user_connected", name => {
+    console.log(`${name} is online`);
   });
 });
 
