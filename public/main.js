@@ -89,6 +89,49 @@ if (document.getElementById("chat-form")) {
     }
   });
 
+  document.getElementById("record-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("record-btn");
+
+    if (window.mediaRecorder && window.mediaRecorder.state === "recording") {
+      window.mediaRecorder.stop();
+      btn.textContent = "🎙️";
+    } else {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      window.mediaRecorder = new MediaRecorder(stream);
+      window.recordedChunks = [];
+
+      window.mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) window.recordedChunks.push(e.data);
+      };
+
+      window.mediaRecorder.onstop = async () => {
+        const blob = new Blob(window.recordedChunks, { type: 'audio/webm' });
+        window.recordedChunks = [];
+
+        const formData = new FormData();
+        formData.append("file", blob, `voice-${Date.now()}.webm`);
+
+        const res = await fetch("/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+        if (data.url) {
+          socket.emit("share_file", {
+            from: currentUser,
+            to: currentChatWith,
+            filename: "Voice Message",
+            url: data.url
+          });
+        }
+      };
+
+      window.mediaRecorder.start();
+      btn.textContent = "⏹️";
+    }
+  });
+
   document.getElementById("delete-all-btn")?.addEventListener("click", async () => {
     if (confirm("Are you sure you want to delete all messages with this user?")) {
       await fetch(`/messages/${currentUser}/${currentChatWith}`, { method: 'DELETE' });
@@ -120,13 +163,17 @@ if (document.getElementById("chat-form")) {
     if (isCurrent) {
       const div = document.createElement("div");
       div.className = "bg-white p-2 rounded shadow";
-      div.innerHTML = `<strong class="text-purple-600">${from}</strong> sent: <a href="${url}" download class="text-pink-600 underline">${filename}</a>`;
+      const isAudio = filename.includes("voice") && url.endsWith(".webm");
+      div.innerHTML = isAudio
+        ? `<strong class="text-purple-600">${from}</strong> sent: <audio controls src="${url}" class="mt-1"></audio>`
+        : `<strong class="text-purple-600">${from}</strong> sent: <a href="${url}" download class="text-pink-600 underline">${filename}</a>`;
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     if (from !== currentUser) {
-      showToast(from, `📎 ${filename}`);
+      const label = filename.includes("voice") ? "🎤 Voice Message" : `📎 ${filename}`;
+      showToast(from, label);
       notifySound?.play().catch(() => {});
     }
   });
