@@ -55,7 +55,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
@@ -115,6 +114,48 @@ app.post('/upload', upload.single('file'), (req, res) => {
   res.json({ url: `/uploads/${req.file.filename}` });
 });
 
+// ✅ Friend Request System
+app.post('/send-friend-request', async (req, res) => {
+  const { from, to } = req.body;
+  if (from === to) return res.status(400).json({ error: 'Cannot request yourself' });
+
+  const recipient = await User.findOne({ username: to });
+  if (!recipient) return res.status(404).json({ error: 'User not found' });
+
+  if (recipient.friends?.includes(from)) return res.status(400).json({ error: 'Already friends' });
+
+  if (recipient.friendRequests?.includes(from)) return res.status(400).json({ error: 'Request already sent' });
+
+  await User.updateOne({ username: to }, { $addToSet: { friendRequests: from } });
+  io.to(to).emit('friend_request_received', { from });
+  res.sendStatus(200);
+});
+
+app.post('/accept-friend-request', async (req, res) => {
+  const { username, from } = req.body;
+  const user = await User.findOne({ username });
+  const sender = await User.findOne({ username: from });
+
+  if (!user || !sender) return res.status(404).json({ error: 'User not found' });
+
+  await User.updateOne({ username }, {
+    $pull: { friendRequests: from },
+    $addToSet: { friends: from }
+  });
+  await User.updateOne({ username: from }, {
+    $addToSet: { friends: username }
+  });
+
+  io.to(from).emit('friend_request_accepted', { by: username });
+  res.sendStatus(200);
+});
+
+app.get('/friend-requests/:username', async (req, res) => {
+  const user = await User.findOne({ username: req.params.username });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json(user.friendRequests || []);
+});
+
 // Chat History
 app.get('/messages/:from/:to', async (req, res) => {
   const { from, to } = req.params;
@@ -162,6 +203,7 @@ let onlineUsers = [];
 io.on('connection', (socket) => {
   socket.on('user_connected', (username) => {
     socket.username = username;
+    socket.join(username); // ✅ join personal room
     if (!onlineUsers.includes(username)) {
       onlineUsers.push(username);
     }
@@ -192,7 +234,16 @@ io.on('connection', (socket) => {
     const room = [data.from, data.to].sort().join('_');
     io.to(room).emit('file_shared', data);
   });
+   // ✅ Friend request system
+  socket.on("friend_request_sent", ({ from, to }) => {
+    io.to(to).emit("friend_request_received", { from });
+  });
+
+  socket.on("friend_request_accepted", ({ from, to }) => {
+    io.to(to).emit("friend_request_accepted", { from });
+  });
 });
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));

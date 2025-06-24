@@ -241,3 +241,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// ✅ Friend Request Notification Handlers
+socket.on("friend_request_received", ({ from }) => {
+  showToast("🔔 Friend Request", `📩 from ${from}`);
+  notifySound?.play().catch(() => {});
+});
+
+socket.on("friend_request_accepted", ({ from }) => {
+  showToast("✅ Friend Accepted", `${from} accepted your request`);
+  notifySound?.play().catch(() => {});
+});
+
+// ✅ Friend Request Handling (UPDATED to emit socket event)
+document.addEventListener("DOMContentLoaded", () => {
+  const addFriendBtn = document.getElementById("add-friend-btn");
+  const friendInput = document.getElementById("add-friend-username");
+  const statusMsg = document.getElementById("add-friend-status");
+
+  if (addFriendBtn) {
+    addFriendBtn.addEventListener("click", async () => {
+      const friend = friendInput.value.trim();
+      if (!friend) return;
+
+      const res = await fetch('/send-friend-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: currentUser, to: friend })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        statusMsg.textContent = "✅ Request sent!";
+        socket.emit("friend_request_sent", { from: currentUser, to: friend }); // ✅ emit event
+        friendInput.value = "";
+      } else {
+        statusMsg.textContent = `❌ ${data.error || "Failed to send request"}`;
+      }
+
+      statusMsg.classList.remove("hidden");
+      setTimeout(() => statusMsg.classList.add("hidden"), 3000);
+    });
+  }
+});

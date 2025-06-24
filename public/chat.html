@@ -30,18 +30,39 @@
   <div id="toast" class="fixed top-5 right-5 bg-white shadow-lg border-l-4 border-purple-500 text-black p-3 rounded hidden z-50"></div>
   <audio id="notify-sound" src="notify.mp3" preload="auto"></audio>
 
+  <!-- ✅ Friend Requests UI -->
+<div id="friend-requests-container" class="max-w-2xl mx-auto mb-4 bg-white/80 backdrop-blur p-3 rounded shadow hidden">
+  <div class="flex items-center justify-between mb-2">
+    <span class="font-semibold text-gray-800">Friend Requests</span>
+    <span id="request-badge" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full hidden"></span>
+  </div>
+  <div id="friend-requests-list" class="space-y-2"></div>
+</div>
+
   <!-- 💬 Chat UI -->
   <main id="chat-section" class="w-full max-w-2xl mx-auto space-y-4 flex-grow">
     <div class="bg-purple-600 text-white text-center p-3 rounded-t-lg shadow-lg text-xl font-semibold">
       💌 LoveChat – One to One
     </div>
- <!-- ✅ Add this inside #chat-section (above user-select dropdown) -->
+ <!-- ✅ Friend Requests + Add Friend UI -->
+<div class="bg-white/70 backdrop-blur p-3 rounded shadow space-y-4">
+  <!-- Friend Requests -->
+  <div id="friend-requests-ui" class="space-y-2">
+    <div class="flex justify-between items-center">
+      <label class="font-medium text-gray-700">Friend Requests</label>
+      <span id="request-badge" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full hidden"></span>
+    </div>
+    <div id="friend-requests-list" class="space-y-2"></div>
+  </div>
 
-<div class="bg-white/70 backdrop-blur p-3 rounded shadow space-y-2">
-  <label class="font-medium text-gray-700">Add Friend by Username:</label>
-  <div class="flex gap-2">
-    <input id="friend-username" placeholder="Friend's username" class="flex-1 p-2 border rounded text-black" />
-    <button id="add-friend-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">Add</button>
+  <!-- Add Friend -->
+  <div>
+    <label class="font-medium text-gray-700">Add Friend by Username:</label>
+    <div class="flex gap-2 mt-1">
+      <input id="add-friend-username" placeholder="Friend's username" class="flex-1 p-2 border rounded text-black" />
+      <button id="add-friend-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">Add</button>
+    </div>
+    <div id="add-friend-status" class="text-sm mt-1 text-gray-600 hidden"></div>
   </div>
 </div>
 
