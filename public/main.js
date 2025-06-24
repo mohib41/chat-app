@@ -80,36 +80,43 @@ try {
     }
   });
 
+  // 🔧 UPDATED: receive_message — always show toast + sound
   socket.on("receive_message", (data) => {
     const { from, to, text, _id } = data;
-    if ((from === currentChatWith && to === currentUser) || (from === currentUser && to === currentChatWith)) {
+
+    const isCurrent = (from === currentChatWith && to === currentUser) || (from === currentUser && to === currentChatWith);
+    if (isCurrent) {
       const div = document.createElement("div");
       div.className = "bg-white p-2 rounded shadow flex justify-between items-center";
       div.innerHTML = `<span><strong class="text-purple-600">${from}</strong>: ${text}</span>` +
         (from === currentUser ? `<button onclick="deleteMessage('${_id}')" class="text-red-500 ml-4">🗑️</button>` : '');
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-      if (from !== currentUser) {
-        const msg = privacyToggle?.checked ? null : text;
-        showToast(from, msg);
-        notifySound?.play().catch(() => {});
-      }
+    // 🔧 ALWAYS show toast + sound if not current user
+    if (from !== currentUser) {
+      const msg = privacyToggle?.checked ? null : text;
+      showToast(from, msg);
+      notifySound?.play().catch(() => {});
     }
   });
 
+    // 🔧 UPDATED: file_shared — always show toast + sound
   socket.on("file_shared", ({ from, to, filename, url }) => {
-    if ((from === currentChatWith && to === currentUser) || (from === currentUser && to === currentChatWith)) {
+    const isCurrent = (from === currentChatWith && to === currentUser) || (from === currentUser && to === currentChatWith);
+    if (isCurrent) {
       const div = document.createElement("div");
       div.className = "bg-white p-2 rounded shadow";
       div.innerHTML = `<strong class="text-purple-600">${from}</strong> sent: <a href="${url}" download class="text-pink-600 underline">${filename}</a>`;
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-      if (from !== currentUser) {
-        showToast(from, `📎 ${filename}`);
-        notifySound?.play().catch(() => {});
-      }
+    // 🔧 ALWAYS notify
+    if (from !== currentUser) {
+      showToast(from, `📎 ${filename}`);
+      notifySound?.play().catch(() => {});
     }
   });
 
