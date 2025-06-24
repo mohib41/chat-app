@@ -11,7 +11,6 @@ const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const { User, Message } = require('./models');
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('ffmpeg-static');
 const fs = require('fs'); // for deleting files
 require('dotenv').config();
 
