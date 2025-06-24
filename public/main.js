@@ -181,7 +181,23 @@ if (document.getElementById("chat-form")) {
     });
     chatBox.scrollTop = chatBox.scrollHeight;
   }
+  async function updateFriendDropdown() {
+  const res = await fetch(`/friends/${currentUser}`);
+  const friends = await res.json();
+  const select = document.getElementById("user-select");
 
+  select.innerHTML = friends
+    .filter(f => f !== currentUser)
+    .map(f => `<option value="${f}">${f}</option>`)
+    .join('');
+
+  // Auto-select first friend if none selected
+  if (!currentChatWith && select.options.length > 0) {
+    currentChatWith = select.options[0].value;
+    socket.emit("join_room", { from: currentUser, to: currentChatWith });
+    loadMessages();
+  }
+}
   window.deleteMessage = async function (id) {
     await fetch(`/messages/${id}`, { method: 'DELETE' });
     loadMessages();
@@ -262,6 +278,7 @@ socket.on("friend_request_received", ({ from }) => {
     if (res.ok) {
       showToast(`You are now friends with ${from}`);
       socket.emit("friend_request_accepted", { from: currentUser, to: from });
+       await updateFriendDropdown(); // ✅ This updates the dropdown
       toast.classList.add("hidden");
     }
   };
