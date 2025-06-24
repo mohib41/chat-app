@@ -7,6 +7,7 @@ const chatBox = document.getElementById("chat-box");
 const toast = document.getElementById("toast");
 const privacyToggle = document.getElementById("privacy-toggle");
 const notifySound = document.getElementById("notify-sound");
+const typingIndicator = document.getElementById("typing-indicator"); // ✅ NEW
 
 if (document.getElementById("login-btn")) {
   document.getElementById("login-btn").addEventListener("click", async () => {
@@ -38,7 +39,25 @@ if (document.getElementById("chat-form")) {
         text: msg
       });
       input.value = "";
+      socket.emit("typing", { from: currentUser, to: currentChatWith, typing: false }); // ✅ Stop typing
     }
+  });
+
+  // ✅ TYPING INDICATOR EMIT
+  document.getElementById("message-input").addEventListener("input", () => {
+    socket.emit("typing", {
+      from: currentUser,
+      to: currentChatWith,
+      typing: true
+    });
+    clearTimeout(window.typingTimeout);
+    window.typingTimeout = setTimeout(() => {
+      socket.emit("typing", {
+        from: currentUser,
+        to: currentChatWith,
+        typing: false
+      });
+    }, 1000);
   });
 
   document.getElementById("upload-form").addEventListener("submit", async (e) => {
@@ -47,30 +66,28 @@ if (document.getElementById("chat-form")) {
     if (!file || !currentChatWith) return;
     const formData = new FormData();
     formData.append("file", file);
-  // 🔧 Updated file upload handling
-try {
-  const res = await fetch("/upload", { method: "POST", body: formData });
-  const data = await res.json();
 
-  if (!data.url) {
-    alert("❌ Upload failed on server");
-    return;
-  }
+    try {
+      const res = await fetch("/upload", { method: "POST", body: formData });
+      const data = await res.json();
 
-  socket.emit("share_file", {
-    from: currentUser,
-    to: currentChatWith,
-    filename: file.name,
-    url: data.url
-  });
+      if (!data.url) {
+        alert("❌ Upload failed on server");
+        return;
+      }
 
-  document.getElementById("file-input").value = "";
-} catch (err) {
-  console.error("Upload error:", err);
-  alert("❌ Could not upload file");
-}
+      socket.emit("share_file", {
+        from: currentUser,
+        to: currentChatWith,
+        filename: file.name,
+        url: data.url
+      });
 
-    document.getElementById("file-input").value = "";
+      document.getElementById("file-input").value = "";
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("❌ Could not upload file");
+    }
   });
 
   document.getElementById("delete-all-btn")?.addEventListener("click", async () => {
@@ -80,10 +97,8 @@ try {
     }
   });
 
-  // 🔧 UPDATED: receive_message — always show toast + sound
   socket.on("receive_message", (data) => {
     const { from, to, text, _id } = data;
-
     const isCurrent = (from === currentChatWith && to === currentUser) || (from === currentUser && to === currentChatWith);
     if (isCurrent) {
       const div = document.createElement("div");
@@ -94,7 +109,6 @@ try {
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // 🔧 ALWAYS show toast + sound if not current user
     if (from !== currentUser) {
       const msg = privacyToggle?.checked ? null : text;
       showToast(from, msg);
@@ -102,7 +116,6 @@ try {
     }
   });
 
-    // 🔧 UPDATED: file_shared — always show toast + sound
   socket.on("file_shared", ({ from, to, filename, url }) => {
     const isCurrent = (from === currentChatWith && to === currentUser) || (from === currentUser && to === currentChatWith);
     if (isCurrent) {
@@ -113,30 +126,42 @@ try {
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // 🔧 ALWAYS notify
     if (from !== currentUser) {
       showToast(from, `📎 ${filename}`);
       notifySound?.play().catch(() => {});
     }
   });
 
-  socket.on("online_users", (users) => {
+  // ✅ TYPING LISTENER
+  socket.on("typing", ({ from, typing }) => {
+    if (from === currentChatWith && typing) {
+      typingIndicator.innerText = `${from} is typing...`;
+    } else if (from === currentChatWith && !typing) {
+      typingIndicator.innerText = '';
+    }
+  });
+
+  socket.on("online_users", async (users) => {
     const select = document.getElementById("user-select");
     const onlineDiv = document.getElementById("online-users");
+    const res = await fetch(`/friends/${currentUser}`);
+    const friends = await res.json();
 
-    select.innerHTML = users
-      .filter(u => u !== currentUser)
-      .map(u => `<option value="${u}">${u}</option>`)
+    select.innerHTML = friends
+      .filter(f => f !== currentUser)
+      .map(f => `<option value="${f}">${f}</option>`)
       .join('');
 
-    onlineDiv.innerText = `Online: ${users.join(', ')}`;
+    const onlineFriends = users.filter(u => friends.includes(u));
+    onlineDiv.innerText = `Online: ${onlineFriends.join(', ')}`;
 
     if (!currentChatWith && select.options.length > 0) {
       currentChatWith = select.options[0].value;
       socket.emit("join_room", { from: currentUser, to: currentChatWith });
       loadMessages();
     }
-    joinAllRooms(users); // ✅ NEW
+
+    joinAllRooms(users); // ✅ make sure all rooms are joined
   });
 
   document.getElementById("user-select").addEventListener("change", (e) => {
@@ -174,7 +199,8 @@ try {
   if (currentChatWith) {
     socket.emit("join_room", { from: currentUser, to: currentChatWith });
   }
-   // ✅ NEW: Join all chat rooms so messages from others can trigger toast
+
+  // ✅ Join all rooms for toast
   function joinAllRooms(users) {
     users.forEach(user => {
       if (user !== currentUser) {
@@ -184,3 +210,34 @@ try {
   }
 }
 
+// ✅ Friend Request Handling
+document.addEventListener("DOMContentLoaded", () => {
+  const addFriendBtn = document.getElementById("add-friend-btn");
+  const friendInput = document.getElementById("add-friend-username");
+  const statusMsg = document.getElementById("add-friend-status");
+
+  if (addFriendBtn) {
+    addFriendBtn.addEventListener("click", async () => {
+      const friend = friendInput.value.trim();
+      if (!friend) return;
+
+      const res = await fetch('/add-friend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: currentUser, friend })
+      });
+
+      if (res.ok) {
+        statusMsg.textContent = "✅ Friend added!";
+        statusMsg.classList.remove("hidden");
+        friendInput.value = "";
+        setTimeout(() => statusMsg.classList.add("hidden"), 2000);
+      } else {
+        const data = await res.json();
+        statusMsg.textContent = `❌ ${data.error || "Failed to add friend"}`;
+        statusMsg.classList.remove("hidden");
+        setTimeout(() => statusMsg.classList.add("hidden"), 3000);
+      }
+    });
+  }
+});

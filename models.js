@@ -5,7 +5,9 @@ const userSchema = new mongoose.Schema({
   email:    { type: String, required: true },
   passwordHash: { type: String, required: true },
   otp: String,
-  otpExpiry: Date
+  otpExpiry: Date,
+   // ✅ Added friends array
+  friends: [{ type: String }]
 });
 
 const messageSchema = new mongoose.Schema({

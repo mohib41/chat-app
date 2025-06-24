@@ -89,6 +89,26 @@ app.get('/users', async (req, res) => {
   res.json(users);
 });
 
+// ✅ Add this route to server.js
+app.post('/add-friend', async (req, res) => {
+  const { user, friend } = req.body;
+
+  if (user === friend) return res.status(400).json({ error: "Cannot add yourself." });
+
+  const targetUser = await User.findOne({ username: friend });
+  if (!targetUser) return res.status(404).json({ error: "User not found" });
+
+  await User.updateOne({ username: user }, { $addToSet: { friends: friend } });
+  res.sendStatus(200);
+});
+
+// ✅ Get your friends
+app.get('/friends/:username', async (req, res) => {
+  const user = await User.findOne({ username: req.params.username });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json(user.friends);
+});
+
 // ✅ [NEW] Upload API
 app.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });

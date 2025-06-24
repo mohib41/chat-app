@@ -35,6 +35,15 @@
     <div class="bg-purple-600 text-white text-center p-3 rounded-t-lg shadow-lg text-xl font-semibold">
       💌 LoveChat – One to One
     </div>
+ <!-- ✅ Add this inside #chat-section (above user-select dropdown) -->
+
+<div class="bg-white/70 backdrop-blur p-3 rounded shadow space-y-2">
+  <label class="font-medium text-gray-700">Add Friend by Username:</label>
+  <div class="flex gap-2">
+    <input id="friend-username" placeholder="Friend's username" class="flex-1 p-2 border rounded text-black" />
+    <button id="add-friend-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">Add</button>
+  </div>
+</div>
 
     <!-- Online Users + Select -->
     <div class="bg-white/70 backdrop-blur p-3 rounded shadow space-y-2">
@@ -45,6 +54,9 @@
 
     <!-- Chat Box -->
     <div id="chat-box" class="bg-white/70 backdrop-blur p-3 rounded shadow h-80 overflow-y-auto space-y-2"></div>
+
+    <!-- ✅ Typing Indicator UI (Add just above chat form) -->
+<div id="typing-indicator" class="text-gray-500 text-sm px-2 py-1 h-5"></div>
 
     <!-- Message Form -->
     <form id="chat-form" class="flex gap-2">
