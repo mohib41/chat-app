@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>💕 LoveChat - Register</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 to-pink-100 h-screen flex items-center justify-center">
+  <div class="bg-white/80 p-8 rounded-xl shadow-xl backdrop-blur w-full max-w-sm">
+    <h1 class="text-2xl font-bold text-center text-pink-600 mb-6">💕 Register for LoveChat</h1>
+    <input id="reg-username" type="text" placeholder="Username" class="mb-4 p-2 border rounded w-full"/>
+    <input id="reg-email" type="email" placeholder="Email" class="mb-4 p-2 border rounded w-full"/>
+    <input id="reg-password" type="password" placeholder="Password" class="mb-4 p-2 border rounded w-full"/>
+    <button id="register-btn" class="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600">Register</button>
+    <p class="text-sm mt-4 text-center">Already have an account? <a href="login.html" class="text-pink-600 underline">Login</a></p>
+    <p id="register-error" class="text-red-500 text-sm mt-3 hidden">Failed to register. Try again.</p>
+  </div>
+  <script>
+    document.getElementById('register-btn').addEventListener('click', async () => {
+      const username = document.getElementById('reg-username').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
+      });
+      if (res.ok) {
+        alert('Registered! Now login.');
+        window.location.href = 'login.html';
+      } else {
+        document.getElementById('register-error').classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
