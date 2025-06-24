@@ -224,7 +224,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on("typing", ({ from, to, typing }) => {
-  const room = [from, to].sort().join("-");
+  const room = [from, to].sort().join("_");
   io.to(room).emit("typing", { from, to, typing });
 });
 
