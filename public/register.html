@@ -1,29 +1,24 @@
-<!-- /public/register.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Register - LoveChat</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gradient-to-r from-pink-100 to-blue-100 min-h-screen flex items-center justify-center p-4">
-
-  <div class="bg-white/80 backdrop-blur p-6 rounded-lg shadow-lg max-w-sm w-full space-y-4">
-    <h1 class="text-2xl font-bold text-purple-700 text-center">💕 Register to LoveChat</h1>
-
-    <input id="username" placeholder="Username" class="p-2 w-full rounded border text-black">
-    <input id="email" placeholder="Email" class="p-2 w-full rounded border text-black">
-    <input id="password" type="password" placeholder="Password" class="p-2 w-full rounded border text-black">
-
-    <button id="register-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full w-full">Register</button>
-
-    <p id="register-error" class="text-red-500 hidden text-sm">❌ Failed to register</p>
-
-    <div class="text-center text-sm text-gray-600">
+<body class="flex items-center justify-center min-h-screen bg-gradient-to-r from-pink-100 to-indigo-100">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-sm space-y-4">
+    <h1 class="text-2xl font-bold text-center text-purple-600">💕 Register for LoveChat</h1>
+    <input id="username" type="text" placeholder="Username" class="w-full p-2 border rounded text-black" />
+    <input id="email" type="email" placeholder="Email" class="w-full p-2 border rounded text-black" />
+    <input id="password" type="password" placeholder="Password" class="w-full p-2 border rounded text-black" />
+    <button id="register-btn" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-full">
+      Register
+    </button>
+    <p id="register-error" class="text-red-500 text-center hidden">❌ Failed to register</p>
+    <p class="text-center text-sm">
       Already have an account?
       <a href="/login.html" class="text-blue-500 underline">Login</a>
-    </div>
+    </p>
   </div>
 
   <script>
@@ -39,7 +34,7 @@
       });
 
       if (res.ok) {
-        alert("✅ Registered! Now login.");
+        alert("✅ Registered successfully! Please log in.");
         window.location.href = "/login.html";
       } else {
         document.getElementById("register-error").classList.remove("hidden");
