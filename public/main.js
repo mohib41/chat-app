@@ -7,7 +7,7 @@ const chatBox = document.getElementById("chat-box");
 const toast = document.getElementById("toast");
 const privacyToggle = document.getElementById("privacy-toggle");
 const notifySound = document.getElementById("notify-sound");
-const typingIndicator = document.getElementById("typing-indicator"); // ✅ NEW
+const typingIndicator = document.getElementById("typing-indicator");
 
 if (document.getElementById("login-btn")) {
   document.getElementById("login-btn").addEventListener("click", async () => {
@@ -39,11 +39,10 @@ if (document.getElementById("chat-form")) {
         text: msg
       });
       input.value = "";
-      socket.emit("typing", { from: currentUser, to: currentChatWith, typing: false }); // ✅ Stop typing
+      socket.emit("typing", { from: currentUser, to: currentChatWith, typing: false });
     }
   });
 
-  // ✅ TYPING INDICATOR EMIT
   document.getElementById("message-input").addEventListener("input", () => {
     socket.emit("typing", {
       from: currentUser,
@@ -132,7 +131,6 @@ if (document.getElementById("chat-form")) {
     }
   });
 
-  // ✅ TYPING LISTENER
   socket.on("typing", ({ from, typing }) => {
     if (from === currentChatWith && typing) {
       typingIndicator.innerText = `${from} is typing...`;
@@ -161,7 +159,7 @@ if (document.getElementById("chat-form")) {
       loadMessages();
     }
 
-    joinAllRooms(users); // ✅ make sure all rooms are joined
+    joinAllRooms(users);
   });
 
   document.getElementById("user-select").addEventListener("change", (e) => {
@@ -200,7 +198,6 @@ if (document.getElementById("chat-form")) {
     socket.emit("join_room", { from: currentUser, to: currentChatWith });
   }
 
-  // ✅ Join all rooms for toast
   function joinAllRooms(users) {
     users.forEach(user => {
       if (user !== currentUser) {
@@ -210,50 +207,6 @@ if (document.getElementById("chat-form")) {
   }
 }
 
-// ✅ Friend Request Handling
-document.addEventListener("DOMContentLoaded", () => {
-  const addFriendBtn = document.getElementById("add-friend-btn");
-  const friendInput = document.getElementById("add-friend-username");
-  const statusMsg = document.getElementById("add-friend-status");
-
-  if (addFriendBtn) {
-    addFriendBtn.addEventListener("click", async () => {
-      const friend = friendInput.value.trim();
-      if (!friend) return;
-
-      const res = await fetch('/add-friend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: currentUser, friend })
-      });
-
-      if (res.ok) {
-        statusMsg.textContent = "✅ Friend added!";
-        statusMsg.classList.remove("hidden");
-        friendInput.value = "";
-        setTimeout(() => statusMsg.classList.add("hidden"), 2000);
-      } else {
-        const data = await res.json();
-        statusMsg.textContent = `❌ ${data.error || "Failed to add friend"}`;
-        statusMsg.classList.remove("hidden");
-        setTimeout(() => statusMsg.classList.add("hidden"), 3000);
-      }
-    });
-  }
-});
-
-// ✅ Friend Request Notification Handlers
-socket.on("friend_request_received", ({ from }) => {
-  showToast("🔔 Friend Request", `📩 from ${from}`);
-  notifySound?.play().catch(() => {});
-});
-
-socket.on("friend_request_accepted", ({ from }) => {
-  showToast("✅ Friend Accepted", `${from} accepted your request`);
-  notifySound?.play().catch(() => {});
-});
-
-// ✅ Friend Request Handling (UPDATED to emit socket event)
 document.addEventListener("DOMContentLoaded", () => {
   const addFriendBtn = document.getElementById("add-friend-btn");
   const friendInput = document.getElementById("add-friend-username");
@@ -274,7 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (res.ok) {
         statusMsg.textContent = "✅ Request sent!";
-        socket.emit("friend_request_sent", { from: currentUser, to: friend }); // ✅ emit event
+        socket.emit("friend_request_sent", { from: currentUser, to: friend });
         friendInput.value = "";
       } else {
         statusMsg.textContent = `❌ ${data.error || "Failed to send request"}`;
@@ -284,4 +237,41 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => statusMsg.classList.add("hidden"), 3000);
     });
   }
+});
+
+// ✅ Friend Request Notification Handlers (Toast with buttons)
+socket.on("friend_request_received", ({ from }) => {
+  toast.innerHTML = `
+    <div class="space-y-2">
+      <div><strong>${from}</strong> sent you a friend request 💌</div>
+      <div class="flex gap-2">
+        <button id="accept-btn" class="bg-green-500 text-white px-2 py-1 rounded text-sm">Accept</button>
+        <button id="reject-btn" class="bg-gray-400 text-white px-2 py-1 rounded text-sm">Reject</button>
+      </div>
+    </div>
+  `;
+  toast.classList.remove("hidden");
+  notifySound?.play().catch(() => {});
+
+  document.getElementById("accept-btn").onclick = async () => {
+    const res = await fetch("/accept-friend-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: currentUser, from })
+    });
+    if (res.ok) {
+      showToast(`You are now friends with ${from}`);
+      socket.emit("friend_request_accepted", { from: currentUser, to: from });
+      toast.classList.add("hidden");
+    }
+  };
+
+  document.getElementById("reject-btn").onclick = () => {
+    toast.classList.add("hidden");
+  };
+});
+
+socket.on("friend_request_accepted", ({ from }) => {
+  showToast("✅ Friend Accepted", `${from} accepted your request`);
+  notifySound?.play().catch(() => {});
 });
