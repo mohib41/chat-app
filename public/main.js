@@ -136,6 +136,7 @@ try {
       socket.emit("join_room", { from: currentUser, to: currentChatWith });
       loadMessages();
     }
+    joinAllRooms(users); // ✅ NEW
   });
 
   document.getElementById("user-select").addEventListener("change", (e) => {
@@ -173,4 +174,13 @@ try {
   if (currentChatWith) {
     socket.emit("join_room", { from: currentUser, to: currentChatWith });
   }
+   // ✅ NEW: Join all chat rooms so messages from others can trigger toast
+  function joinAllRooms(users) {
+    users.forEach(user => {
+      if (user !== currentUser) {
+        socket.emit("join_room", { from: currentUser, to: user });
+      }
+    });
+  }
 }
+
