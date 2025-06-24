@@ -27,8 +27,6 @@ if (document.getElementById("login-btn")) {
 }
 
 if (document.getElementById("chat-form")) {
-  socket.emit("user_connected", currentUser);
-
   document.getElementById("chat-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const input = document.getElementById("message-input");
@@ -51,7 +49,7 @@ if (document.getElementById("chat-form")) {
     formData.append("file", file);
     const res = await fetch("/upload", { method: "POST", body: formData });
     const data = await res.json();
-    socket.emit("share_file", {
+    socket.emit("file_shared", {
       from: currentUser,
       to: currentChatWith,
       filename: file.name,
@@ -102,17 +100,25 @@ if (document.getElementById("chat-form")) {
 
   socket.on("online_users", (users) => {
     const select = document.getElementById("user-select");
+    const onlineDiv = document.getElementById("online-users");
+
     select.innerHTML = users
       .filter(u => u !== currentUser)
-      .map(u => `<option value="${u}">${u}</option>`)?.join('');
+      .map(u => `<option value="${u}">${u}</option>`)
+      .join('');
+
+    onlineDiv.innerText = `Online: ${users.join(', ')}`;
+
     if (!currentChatWith && select.options.length > 0) {
       currentChatWith = select.options[0].value;
+      socket.emit("join_room", { from: currentUser, to: currentChatWith });
       loadMessages();
     }
   });
 
   document.getElementById("user-select").addEventListener("change", (e) => {
     currentChatWith = e.target.value;
+    socket.emit("join_room", { from: currentUser, to: currentChatWith });
     loadMessages();
   });
 
@@ -139,5 +145,10 @@ if (document.getElementById("chat-form")) {
     toast.innerHTML = `<strong>${title}</strong>${msg ? `: ${msg}` : ''}`;
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 4000);
+  }
+
+  socket.emit("user_connected", currentUser);
+  if (currentChatWith) {
+    socket.emit("join_room", { from: currentUser, to: currentChatWith });
   }
 }
