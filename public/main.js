@@ -27,6 +27,8 @@ if (document.getElementById("login-btn")) {
 }
 
 if (document.getElementById("chat-form")) {
+  socket.emit("user_connected", currentUser);
+
   document.getElementById("chat-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const input = document.getElementById("message-input");
@@ -49,7 +51,7 @@ if (document.getElementById("chat-form")) {
     formData.append("file", file);
     const res = await fetch("/upload", { method: "POST", body: formData });
     const data = await res.json();
-    socket.emit("file_shared", {
+    socket.emit("share_file", {
       from: currentUser,
       to: currentChatWith,
       filename: file.name,
@@ -58,7 +60,7 @@ if (document.getElementById("chat-form")) {
     document.getElementById("file-input").value = "";
   });
 
-  document.getElementById("delete-all-btn").addEventListener("click", async () => {
+  document.getElementById("delete-all-btn")?.addEventListener("click", async () => {
     if (confirm("Are you sure you want to delete all messages with this user?")) {
       await fetch(`/messages/${currentUser}/${currentChatWith}`, { method: 'DELETE' });
       chatBox.innerHTML = '';
@@ -138,7 +140,4 @@ if (document.getElementById("chat-form")) {
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 4000);
   }
-
-  // Connect
-  socket.emit("user_connected", currentUser);
 }
