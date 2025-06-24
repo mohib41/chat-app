@@ -32,12 +32,29 @@ const upload = multer({ storage });
 
 // ========== Auth ==========
 app.post('/register', async (req, res) => {
-  const { username, email, password } = req.body;
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = new User({ username, email, passwordHash });
-  await user.save();
-  res.sendStatus(201);
+  try {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Missing fields' });
+    }
+
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Username already taken' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = new User({ username, email, passwordHash });
+    await user.save();
+
+    res.sendStatus(201);
+  } catch (err) {
+    console.error("❌ Registration error:", err);
+    res.status(500).json({ error: 'Registration failed' });
+  }
 });
+
 
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;

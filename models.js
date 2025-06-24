@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true },
-  email: String,
-  passwordHash: String,
+  username: { type: String, required: true, unique: true },
+  email:    { type: String, required: true },
+  passwordHash: { type: String, required: true },
   otp: String,
-  otpExpiry: Date,
-  profilePic: String,
+  otpExpiry: Date
 });
 
 const messageSchema = new mongoose.Schema({
