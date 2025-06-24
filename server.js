@@ -223,6 +223,11 @@ io.on('connection', (socket) => {
     socket.room = room;
   });
 
+  socket.on("typing", ({ from, to, typing }) => {
+  const room = [from, to].sort().join("-");
+  io.to(room).emit("typing", { from, to, typing });
+});
+
   socket.on('send_message', async ({ from, to, text }) => {
     const room = [from, to].sort().join('_');
     const msg = new Message({ from, to, text });

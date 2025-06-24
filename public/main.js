@@ -131,7 +131,7 @@ if (document.getElementById("chat-form")) {
     }
   });
 
-  socket.on("typing", ({ from, typing }) => {
+  socket.on("typing", ({ from, to, typing }) => {
     if (from === currentChatWith && typing) {
       typingIndicator.innerText = `${from} is typing...`;
     } else if (from === currentChatWith && !typing) {
