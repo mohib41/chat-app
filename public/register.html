@@ -1,45 +1,48 @@
+<!-- /public/register.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - LoveChat</title>
+  <title>Register - LoveChat</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-r from-pink-100 to-blue-100 min-h-screen flex items-center justify-center p-4">
 
   <div class="bg-white/80 backdrop-blur p-6 rounded-lg shadow-lg max-w-sm w-full space-y-4">
-    <h1 class="text-2xl font-bold text-purple-700 text-center">💕 Login to LoveChat</h1>
+    <h1 class="text-2xl font-bold text-purple-700 text-center">💕 Register to LoveChat</h1>
 
     <input id="username" placeholder="Username" class="p-2 w-full rounded border text-black">
+    <input id="email" placeholder="Email" class="p-2 w-full rounded border text-black">
     <input id="password" type="password" placeholder="Password" class="p-2 w-full rounded border text-black">
 
-    <button id="login-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full w-full">Login</button>
+    <button id="register-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full w-full">Register</button>
 
-    <p id="login-error" class="text-red-500 hidden text-sm">❌ Wrong username or password</p>
+    <p id="register-error" class="text-red-500 hidden text-sm">❌ Failed to register</p>
 
     <div class="text-center text-sm text-gray-600">
-      Don’t have an account?
-      <a href="/register.html" class="text-blue-500 underline">Register yourself</a>
+      Already have an account?
+      <a href="/login.html" class="text-blue-500 underline">Login</a>
     </div>
   </div>
 
   <script>
-    document.getElementById("login-btn").addEventListener("click", async () => {
+    document.getElementById("register-btn").addEventListener("click", async () => {
       const username = document.getElementById("username").value.trim();
+      const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
 
-      const res = await fetch('/login', {
+      const res = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, email, password })
       });
 
       if (res.ok) {
-        localStorage.setItem('username', username);
-        window.location.href = "/chat.html";
+        alert("✅ Registered! Now login.");
+        window.location.href = "/login.html";
       } else {
-        document.getElementById("login-error").classList.remove("hidden");
+        document.getElementById("register-error").classList.remove("hidden");
       }
     });
   </script>
