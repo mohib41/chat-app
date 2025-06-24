@@ -163,7 +163,7 @@ if (document.getElementById("chat-form")) {
     if (isCurrent) {
       const div = document.createElement("div");
       div.className = "bg-white p-2 rounded shadow";
-      const isAudio = filename.includes("voice") && url.endsWith(".webm");
+      const isAudio = /\.(webm|mp3|wav)$/i.test(url);
       div.innerHTML = isAudio
         ? `<strong class="text-purple-600">${from}</strong> sent: <audio controls src="${url}" class="mt-1"></audio>`
         : `<strong class="text-purple-600">${from}</strong> sent: <a href="${url}" download class="text-pink-600 underline">${filename}</a>`;
