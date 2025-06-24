@@ -10,6 +10,10 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const { User, Message } = require('./models');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('ffmpeg-static');
+const fs = require('fs'); // for deleting files
+ffmpeg.setFfmpegPath(ffmpegPath); // set FFmpeg path
 require('dotenv').config();
 
 const app = express();
@@ -108,11 +112,35 @@ app.get('/friends/:username', async (req, res) => {
   res.json(user.friends);
 });
 
-// ✅ [NEW] Upload API
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  res.json({ url: `/uploads/${req.file.filename}` });
+
+  const inputPath = req.file.path; // e.g. uploads/12345-voice.webm
+  const isVoice = req.file.originalname.includes('voice');
+
+  // If not voice, return as-is
+  if (!isVoice) {
+    return res.json({ url: `/uploads/${req.file.filename}` });
+  }
+
+  // Convert to MP3
+  const mp3Filename = req.file.filename.replace(/\.\w+$/, '.mp3');
+  const mp3Path = `uploads/${mp3Filename}`;
+
+  ffmpeg(inputPath)
+    .toFormat('mp3')
+    .save(mp3Path)
+    .on('end', () => {
+      // Optional: delete original file
+      fs.unlinkSync(inputPath);
+      res.json({ url: `/uploads/${mp3Filename}` });
+    })
+    .on('error', err => {
+      console.error('FFmpeg error:', err);
+      res.status(500).json({ error: 'Failed to convert voice file' });
+    });
 });
+
 
 // ✅ Friend Request System
 app.post('/send-friend-request', async (req, res) => {
