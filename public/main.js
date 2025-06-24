@@ -47,14 +47,29 @@ if (document.getElementById("chat-form")) {
     if (!file || !currentChatWith) return;
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch("/upload", { method: "POST", body: formData });
-    const data = await res.json();
-    socket.emit("file_shared", {
-      from: currentUser,
-      to: currentChatWith,
-      filename: file.name,
-      url: data.url
-    });
+  // 🔧 Updated file upload handling
+try {
+  const res = await fetch("/upload", { method: "POST", body: formData });
+  const data = await res.json();
+
+  if (!data.url) {
+    alert("❌ Upload failed on server");
+    return;
+  }
+
+  socket.emit("share_file", {
+    from: currentUser,
+    to: currentChatWith,
+    filename: file.name,
+    url: data.url
+  });
+
+  document.getElementById("file-input").value = "";
+} catch (err) {
+  console.error("Upload error:", err);
+  alert("❌ Could not upload file");
+}
+
     document.getElementById("file-input").value = "";
   });
 
