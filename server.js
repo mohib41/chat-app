@@ -114,6 +114,10 @@ app.get('/chat.html', (_, res) => {
   res.sendFile(path.join(__dirname, 'public', 'chat.html'));
 });
 
+app.get('/register.html', (_, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
 // WebSockets
 io.on('connection', (socket) => {
   socket.on('join_room', ({ from, to }) => {
