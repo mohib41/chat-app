@@ -23,7 +23,7 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public'))); // ✅ Serve /public folder
 
-// File Upload
+// ✅ [NEW] Setup multer for file uploads
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, 'uploads/'),
   filename: (_, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
@@ -89,8 +89,9 @@ app.get('/users', async (req, res) => {
   res.json(users);
 });
 
-// Upload File
+// ✅ [NEW] Upload API
 app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({ url: `/uploads/${req.file.filename}` });
 });
 
