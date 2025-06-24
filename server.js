@@ -136,7 +136,24 @@ app.get('/register.html', (_, res) => {
 });
 
 // WebSockets
+let onlineUsers = [];
+
 io.on('connection', (socket) => {
+  socket.on('user_connected', (username) => {
+    socket.username = username;
+    if (!onlineUsers.includes(username)) {
+      onlineUsers.push(username);
+    }
+    io.emit('online_users', onlineUsers);
+  });
+
+  socket.on('disconnect', () => {
+    if (socket.username) {
+      onlineUsers = onlineUsers.filter(user => user !== socket.username);
+      io.emit('online_users', onlineUsers);
+    }
+  });
+
   socket.on('join_room', ({ from, to }) => {
     const room = [from, to].sort().join('_');
     socket.join(room);
@@ -155,6 +172,7 @@ io.on('connection', (socket) => {
     io.to(room).emit('file_shared', data);
   });
 });
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
