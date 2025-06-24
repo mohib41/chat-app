@@ -13,7 +13,6 @@ const { User, Message } = require('./models');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('ffmpeg-static');
 const fs = require('fs'); // for deleting files
-ffmpeg.setFfmpegPath(ffmpegPath); // set FFmpeg path
 require('dotenv').config();
 
 const app = express();
