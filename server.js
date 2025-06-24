@@ -1,91 +1,119 @@
 const express = require('express');
 const http = require('http');
-const cors = require('cors');
-const { Server } = require('socket.io');
-const multer = require('multer');
 const path = require('path');
+const cors = require('cors');
+const multer = require('multer');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const { Server } = require('socket.io');
+const { User, Message } = require('./models');
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
+
+mongoose.connect(process.env.MONGO_URI);
 app.use(cors());
 app.use(express.json());
-mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lovechat');
-
-// Mongo Schema
-const messageSchema = new mongoose.Schema({
-  name: String, text: String, timestamp: { type: Date, default: Date.now }
-});
-const Message = mongoose.model('Message', messageSchema);
-
-// Upload Setup
-const storage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, 'uploads/'),
-  filename: (_, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
-  }
-});
-const upload = multer({ storage });
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(__dirname));
 
-// Local Auth
-const USERS = { mohib: "zainab", zainab: "mohib", bob: "bob", alice: "alice" };
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (USERS[username] === password) res.sendStatus(200);
-  else res.sendStatus(401);
+// File Upload
+const storage = multer.diskStorage({
+  destination: (_, __, cb) => cb(null, 'uploads/'),
+  filename: (_, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+});
+const upload = multer({ storage });
+
+// ========== Auth ==========
+
+// Register
+app.post('/register', async (req, res) => {
+  const { username, email, password } = req.body;
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = new User({ username, email, passwordHash });
+  await user.save();
+  res.sendStatus(201);
 });
 
-// Upload
+// Login
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET);
+  res.json({ token });
+});
+
+// Send OTP (mock)
+app.post('/send-otp', async (req, res) => {
+  const { username } = req.body;
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+  await User.findOneAndUpdate({ username }, { otp, otpExpiry });
+  console.log(`OTP for ${username}: ${otp}`);
+  res.sendStatus(200);
+});
+
+// Verify OTP
+app.post('/verify-otp', async (req, res) => {
+  const { username, otp } = req.body;
+  const user = await User.findOne({ username });
+  if (user && user.otp === otp && new Date() < user.otpExpiry) {
+    return res.sendStatus(200);
+  }
+  return res.status(401).json({ error: 'Invalid or expired OTP' });
+});
+
+// Get Users
+app.get('/users', async (req, res) => {
+  const users = await User.find({}, 'username');
+  res.json(users);
+});
+
+// ========== Chat ==========
+
+// Upload File
 app.post('/upload', upload.single('file'), (req, res) => {
   res.json({ url: `/uploads/${req.file.filename}` });
 });
 
-// Messages
-app.get('/messages', async (_, res) => {
-  const messages = await Message.find().sort({ timestamp: 1 }).limit(100);
-  res.json(messages);
+// Get Messages between 2 users
+app.get('/messages/:from/:to', async (req, res) => {
+  const { from, to } = req.params;
+  const msgs = await Message.find({
+    $or: [
+      { from, to },
+      { from: to, to: from }
+    ]
+  }).sort({ timestamp: 1 });
+  res.json(msgs);
 });
-app.delete('/messages', async (_, res) => { await Message.deleteMany({}); res.sendStatus(200); });
-app.delete('/messages/:id', async (req, res) => { await Message.findByIdAndDelete(req.params.id); res.sendStatus(200); });
 
-// Socket.IO
-const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
-let onlineUsers = [];
-
-io.on("connection", (socket) => {
-  socket.on("user_connected", (name) => {
-    socket.username = name;
-    if (!onlineUsers.includes(name)) onlineUsers.push(name);
-    io.emit("online_users", onlineUsers);
+// Socket.io
+io.on('connection', (socket) => {
+  socket.on('join_room', ({ from, to }) => {
+    const room = [from, to].sort().join('_');
+    socket.join(room);
+    socket.room = room;
   });
 
-  socket.on("send_message", async (data) => {
-    const newMsg = new Message(data);
-    await newMsg.save();
-    io.emit("receive_message", data);
+  socket.on('send_message', async ({ from, to, text }) => {
+    const room = [from, to].sort().join('_');
+    const msg = new Message({ from, to, text });
+    await msg.save();
+    io.to(room).emit('receive_message', msg);
   });
 
-  socket.on("share_file", (data) => {
-    io.emit("file_shared", data);
-  });
-
-  socket.on("typing", (name) => {
-    socket.broadcast.emit("typing", name);
-  });
-
-  socket.on("disconnect", () => {
-    if (socket.username) {
-      onlineUsers = onlineUsers.filter(user => user !== socket.username);
-      io.emit("online_users", onlineUsers);
-    }
+  socket.on('share_file', (data) => {
+    const room = [data.from, data.to].sort().join('_');
+    io.to(room).emit('file_shared', data);
   });
 });
 
-// Start
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
-});
+server.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
