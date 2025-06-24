@@ -1,3 +1,5 @@
+// ✅ server.js
+
 const express = require('express');
 const http = require('http');
 const path = require('path');
@@ -15,10 +17,11 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
 mongoose.connect(process.env.MONGO_URI);
+
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public'))); // ✅ Serve /public folder
 
 // File Upload
 const storage = multer.diskStorage({
@@ -28,8 +31,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ========== Auth ==========
-
-// Register
 app.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
   const passwordHash = await bcrypt.hash(password, 10);
@@ -38,7 +39,6 @@ app.post('/register', async (req, res) => {
   res.sendStatus(201);
 });
 
-// Login
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
@@ -49,7 +49,6 @@ app.post('/login', async (req, res) => {
   res.json({ token });
 });
 
-// Send OTP (mock)
 app.post('/send-otp', async (req, res) => {
   const { username } = req.body;
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -59,7 +58,6 @@ app.post('/send-otp', async (req, res) => {
   res.sendStatus(200);
 });
 
-// Verify OTP
 app.post('/verify-otp', async (req, res) => {
   const { username, otp } = req.body;
   const user = await User.findOne({ username });
@@ -69,20 +67,17 @@ app.post('/verify-otp', async (req, res) => {
   return res.status(401).json({ error: 'Invalid or expired OTP' });
 });
 
-// Get Users
 app.get('/users', async (req, res) => {
   const users = await User.find({}, 'username');
   res.json(users);
 });
-
-// ========== Chat ==========
 
 // Upload File
 app.post('/upload', upload.single('file'), (req, res) => {
   res.json({ url: `/uploads/${req.file.filename}` });
 });
 
-// Get Messages between 2 users
+// Chat History
 app.get('/messages/:from/:to', async (req, res) => {
   const { from, to } = req.params;
   const msgs = await Message.find({
@@ -94,7 +89,32 @@ app.get('/messages/:from/:to', async (req, res) => {
   res.json(msgs);
 });
 
-// Socket.io
+app.delete('/messages/:from/:to', async (req, res) => {
+  const { from, to } = req.params;
+  await Message.deleteMany({
+    $or: [
+      { from, to },
+      { from: to, to: from }
+    ]
+  });
+  res.sendStatus(200);
+});
+
+app.delete('/messages/:id', async (req, res) => {
+  await Message.findByIdAndDelete(req.params.id);
+  res.sendStatus(200);
+});
+
+// Serve HTML pages
+app.get('/', (_, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/chat.html', (_, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'chat.html'));
+});
+
+// WebSockets
 io.on('connection', (socket) => {
   socket.on('join_room', ({ from, to }) => {
     const room = [from, to].sort().join('_');
@@ -117,8 +137,3 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
-const fs = require('fs');
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'login.html'));
-});
