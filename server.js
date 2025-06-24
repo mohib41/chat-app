@@ -1,89 +1,91 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
 const cors = require('cors');
+const { Server } = require('socket.io');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const mongoose = require('mongoose');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
-
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// MongoDB
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lovechat');
 
-const storySchema = new mongoose.Schema({
-  username: String,
-  image: String,
-  timestamp: { type: Date, default: Date.now }
+// Mongo Schema
+const messageSchema = new mongoose.Schema({
+  name: String, text: String, timestamp: { type: Date, default: Date.now }
 });
-const Story = mongoose.model('Story', storySchema);
+const Message = mongoose.model('Message', messageSchema);
 
-// Fake users (can be extended later)
-const USERS = {
-  mohib: { password: "zainab", nickname: "💖 My King", avatar: "https://i.pravatar.cc/150?img=3" },
-  zainab: { password: "mohib", nickname: "🌸 My Queen", avatar: "https://i.pravatar.cc/150?img=5" },
-  alice: { password: "123", nickname: "🎀 Alice", avatar: "https://i.pravatar.cc/150?img=1" },
-  bob:   { password: "456", nickname: "🎩 Bob", avatar: "https://i.pravatar.cc/150?img=2" }
-};
-
-// ✅ Login
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (USERS[username]?.password === password) {
-    res.sendStatus(200);
-  } else {
-    res.sendStatus(401);
+// Upload Setup
+const storage = multer.diskStorage({
+  destination: (_, __, cb) => cb(null, 'uploads/'),
+  filename: (_, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
   }
 });
+const upload = multer({ storage });
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(__dirname));
 
-// ✅ Get all users (for chat list)
-app.get('/users', (req, res) => {
-  const result = Object.keys(USERS).map(key => ({
-    username: key,
-    nickname: USERS[key].nickname,
-    avatar: USERS[key].avatar
-  }));
-  res.json(result);
+// Local Auth
+const USERS = { mohib: "zainab", zainab: "mohib", bob: "bob", alice: "alice" };
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  if (USERS[username] === password) res.sendStatus(200);
+  else res.sendStatus(401);
 });
 
-// ✅ Get stories
-app.get('/stories', async (req, res) => {
-  const data = await Story.find().sort({ timestamp: -1 }).limit(20);
-  res.json(data);
+// Upload
+app.post('/upload', upload.single('file'), (req, res) => {
+  res.json({ url: `/uploads/${req.file.filename}` });
 });
 
-// ✅ Upload stories
-const storyStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+// Messages
+app.get('/messages', async (_, res) => {
+  const messages = await Message.find().sort({ timestamp: 1 }).limit(100);
+  res.json(messages);
 });
-const uploadStory = multer({ storage: storyStorage });
+app.delete('/messages', async (_, res) => { await Message.deleteMany({}); res.sendStatus(200); });
+app.delete('/messages/:id', async (req, res) => { await Message.findByIdAndDelete(req.params.id); res.sendStatus(200); });
 
-app.post('/upload-story', uploadStory.single('story'), async (req, res) => {
-  const username = req.body.username;
-  const image = `/uploads/${req.file.filename}`;
-  await new Story({ username, image }).save();
-  res.sendStatus(200);
-});
+// Socket.IO
+const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
+let onlineUsers = [];
 
-// ✅ Socket.IO
-io.on('connection', (socket) => {
-  socket.on("user_connected", name => {
-    console.log(`${name} is online`);
+io.on("connection", (socket) => {
+  socket.on("user_connected", (name) => {
+    socket.username = name;
+    if (!onlineUsers.includes(name)) onlineUsers.push(name);
+    io.emit("online_users", onlineUsers);
+  });
+
+  socket.on("send_message", async (data) => {
+    const newMsg = new Message(data);
+    await newMsg.save();
+    io.emit("receive_message", data);
+  });
+
+  socket.on("share_file", (data) => {
+    io.emit("file_shared", data);
+  });
+
+  socket.on("typing", (name) => {
+    socket.broadcast.emit("typing", name);
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.username) {
+      onlineUsers = onlineUsers.filter(user => user !== socket.username);
+      io.emit("online_users", onlineUsers);
+    }
   });
 });
 
-// ✅ Start Server
+// Start
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
