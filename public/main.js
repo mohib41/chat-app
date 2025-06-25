@@ -187,10 +187,11 @@ if (document.getElementById("chat-form")) {
   });
 
   socket.on("online_users", async (users) => {
-    const select = document.getElementById("user-select");
-    const onlineDiv = document.getElementById("online-users");
     const res = await fetch(`/friends/${currentUser}`);
     const friends = await res.json();
+
+    const select = document.getElementById("user-select");
+    const onlineDiv = document.getElementById("online-users");
 
     select.innerHTML = friends
       .filter(f => f !== currentUser)
@@ -200,13 +201,14 @@ if (document.getElementById("chat-form")) {
     const onlineFriends = users.filter(u => friends.includes(u));
     onlineDiv.innerText = `Online: ${onlineFriends.join(', ')}`;
 
+    // ✅ FIX: auto-select a chat on load
     if (!currentChatWith && select.options.length > 0) {
       currentChatWith = select.options[0].value;
       socket.emit("join_room", { from: currentUser, to: currentChatWith });
       loadMessages();
     }
 
-    joinAllRooms(users);
+    joinAllRooms(friends); // ✅ FIX: use friends not users
   });
 
   document.getElementById("user-select").addEventListener("change", (e) => {
@@ -228,23 +230,33 @@ if (document.getElementById("chat-form")) {
     });
     chatBox.scrollTop = chatBox.scrollHeight;
   }
+
   async function updateFriendDropdown() {
-  const res = await fetch(`/friends/${currentUser}`);
-  const friends = await res.json();
-  const select = document.getElementById("user-select");
+    const res = await fetch(`/friends/${currentUser}`);
+    const friends = await res.json();
+    const select = document.getElementById("user-select");
 
-  select.innerHTML = friends
-    .filter(f => f !== currentUser)
-    .map(f => `<option value="${f}">${f}</option>`)
-    .join('');
+    select.innerHTML = friends
+      .filter(f => f !== currentUser)
+      .map(f => `<option value="${f}">${f}</option>`)
+      .join('');
 
-  // Auto-select first friend if none selected
-  if (!currentChatWith && select.options.length > 0) {
-    currentChatWith = select.options[0].value;
-    socket.emit("join_room", { from: currentUser, to: currentChatWith });
-    loadMessages();
+    if (!currentChatWith && select.options.length > 0) {
+      currentChatWith = select.options[0].value;
+      socket.emit("join_room", { from: currentUser, to: currentChatWith });
+      loadMessages();
+    }
   }
-}
+
+  // ✅ FIX: Only join rooms with friends, not all users
+  function joinAllRooms(friends) {
+    friends.forEach(friend => {
+      if (friend !== currentUser) {
+        socket.emit("join_room", { from: currentUser, to: friend });
+      }
+    });
+  }
+
   window.deleteMessage = async function (id) {
     await fetch(`/messages/${id}`, { method: 'DELETE' });
     loadMessages();
@@ -257,17 +269,8 @@ if (document.getElementById("chat-form")) {
   }
 
   socket.emit("user_connected", currentUser);
-  if (currentChatWith) {
-    socket.emit("join_room", { from: currentUser, to: currentChatWith });
-  }
-
-  function joinAllRooms(users) {
-    users.forEach(user => {
-      if (user !== currentUser) {
-        socket.emit("join_room", { from: currentUser, to: user });
-      }
-    });
-  }
+  socket.emit("join_room", { from: currentUser, to: currentChatWith });
+  updateFriendDropdown(); // ✅ FIX: load friends immediately
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -302,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ✅ Friend Request Notification Handlers (Toast with buttons)
+// ✅ Toast Friend Request Notification
 socket.on("friend_request_received", ({ from }) => {
   toast.innerHTML = `
     <div class="space-y-2">
@@ -325,7 +328,7 @@ socket.on("friend_request_received", ({ from }) => {
     if (res.ok) {
       showToast(`You are now friends with ${from}`);
       socket.emit("friend_request_accepted", { from: currentUser, to: from });
-       await updateFriendDropdown(); // ✅ This updates the dropdown
+      await updateFriendDropdown(); // ✅ FIX: refresh friends list after accept
       toast.classList.add("hidden");
     }
   };

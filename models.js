@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
   otp: String,
   otpExpiry: Date,
    // ✅ Added friends array
-  friends: [{ type: String }]
+  friends: [{ type: String }],
+  friendRequests: [{ type: String }] // ✅ ADD THIS
 });
 
 const messageSchema = new mongoose.Schema({
