@@ -274,6 +274,20 @@ if (document.getElementById("chat-form")) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    // ✅ Unlock audio playback (browser autoplay restrictions)
+  document.addEventListener('click', () => {
+    try {
+      notifySound.volume = 0;
+      notifySound.play().then(() => {
+        notifySound.pause();
+        notifySound.currentTime = 0;
+        notifySound.volume = 1;
+      });
+    } catch (e) {
+      console.warn("Audio unlock failed:", e);
+    }
+  }, { once: true });
+
   const addFriendBtn = document.getElementById("add-friend-btn");
   const friendInput = document.getElementById("add-friend-username");
   const statusMsg = document.getElementById("add-friend-status");

@@ -98,21 +98,6 @@
   <footer class="w-full mt-6 text-center text-xs text-gray-500 py-4 border-t border-purple-100">
     Made with 💖 by <strong>Mohib</strong> · LoveChat © 2025
   </footer>
-
-  <script>
-    const notifySound = document.getElementById('notify-sound');
-    document.addEventListener('click', () => {
-      notifySound.volume = 0;
-      notifySound.play().then(() => {
-        notifySound.pause();
-        notifySound.currentTime = 0;
-        notifySound.volume = 1;
-      }).catch((e) => {
-        console.warn("Audio unlock failed:", e);
-      });
-    }, { once: true });
-  </script>
-
   <script src="main.js"></script>
 </body>
 </html>
