@@ -24,12 +24,15 @@
     }
 
     .sparkle-text {
-      background: linear-gradient(270deg, #ff77e9, #c299ff, #ff77e9);
-      background-size: 600% 600%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shimmer 6s ease infinite;
-    }
+  background: linear-gradient(270deg, #ff77e9, #c299ff, #ff77e9);
+  background-size: 600% 600%;
+  background-clip: text;                  /* ✅ Standard property */
+  -webkit-background-clip: text;          /* ✅ WebKit fallback */
+  -webkit-text-fill-color: transparent;
+  color: transparent;                     /* ✅ Extra fallback for Firefox */
+  animation: shimmer 6s ease infinite;
+}
+
 
     @keyframes shimmer {
       0% { background-position: 0% 50%; }
