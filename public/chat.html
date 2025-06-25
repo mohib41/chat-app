@@ -22,6 +22,29 @@
       background-color: #d2b3fc;
       border-radius: 3px;
     }
+
+    .sparkle-text {
+      background: linear-gradient(270deg, #ff77e9, #c299ff, #ff77e9);
+      background-size: 600% 600%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 6s ease infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @media (max-width: 640px) {
+      #chat-form button,
+      #upload-form button,
+      #delete-all-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+      }
+    }
   </style>
 </head>
 <body class="text-gray-800 flex flex-col min-h-screen justify-between p-4">
@@ -32,11 +55,14 @@
 
   <!-- 💬 Chat UI -->
   <main id="chat-section" class="w-full max-w-2xl mx-auto space-y-4 flex-grow">
-    <div class="bg-purple-600 text-white text-center p-3 rounded-t-lg shadow-lg text-xl font-semibold">
-      💌 LoveChat – One to One
+
+    <!-- ✅ Sparkling Header -->
+    <div class="bg-gradient-to-r from-pink-500 to-purple-600 text-center p-4 rounded-t-lg shadow-lg">
+      <div class="text-3xl font-bold sparkle-text">💖 LoveChat</div>
+      <div class="text-sm text-white mt-1">Private. Instant. Beautiful.</div>
     </div>
 
-    <!-- ✅ Friend Requests + Add Friend UI -->
+    <!-- Friend Requests + Add Friend -->
     <div class="bg-white/70 backdrop-blur p-3 rounded shadow space-y-4">
       <div id="friend-requests-ui" class="space-y-2">
         <div class="flex justify-between items-center">
@@ -46,12 +72,13 @@
         <div id="friend-requests-list" class="space-y-2"></div>
       </div>
 
-      <!-- Add Friend -->
       <div>
         <label class="font-medium text-gray-700">Add Friend by Username:</label>
         <div class="flex gap-2 mt-1">
           <input id="add-friend-username" placeholder="Friend's username" class="flex-1 p-2 border rounded text-black" />
-          <button id="add-friend-btn" class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-4 py-2 rounded-lg shadow">➕ Add</button>
+          <button id="add-friend-btn" class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-4 py-2 rounded-full shadow">
+            Add
+          </button>
         </div>
         <div id="add-friend-status" class="text-sm mt-1 text-gray-600 hidden"></div>
       </div>
@@ -67,20 +94,26 @@
     <!-- Chat Box -->
     <div id="chat-box" class="bg-white/70 backdrop-blur p-3 rounded shadow h-80 overflow-y-auto space-y-2"></div>
 
-    <!-- ✅ Typing Indicator -->
+    <!-- Typing Indicator -->
     <div id="typing-indicator" class="text-gray-500 text-sm px-2 py-1 h-5"></div>
 
     <!-- Message Form -->
     <form id="chat-form" class="flex gap-2">
       <input id="message-input" type="text" placeholder="Type your message..." class="flex-1 p-2 rounded border text-black">
-      <button type="submit" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-5 py-2 rounded-full shadow-md">📤 Send</button>
-      <button type="button" id="record-btn" class="bg-gradient-to-r from-indigo-400 to-indigo-600 hover:from-indigo-500 hover:to-indigo-700 text-white px-4 py-2 rounded-full shadow-md">🎙️</button>
+      <button type="submit" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 rounded-full shadow">
+        Send
+      </button>
+      <button type="button" id="record-btn" class="bg-gradient-to-r from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 text-white px-4 py-2 rounded-full shadow">
+        🎙️
+      </button>
     </form>
 
     <!-- File Upload -->
-    <form id="upload-form" class="flex flex-col sm:flex-row gap-2 mt-2">
+    <form id="upload-form" class="flex flex-col sm:flex-row gap-2">
       <input type="file" id="file-input" class="text-sm text-indigo-800 file:bg-indigo-100 file:border file:rounded file:px-2 file:py-1">
-      <button class="bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white px-5 py-2 rounded-full shadow-md w-full sm:w-auto">📎 Upload</button>
+      <button class="bg-gradient-to-r from-indigo-400 to-purple-500 hover:from-indigo-500 hover:to-purple-600 text-white px-4 py-2 rounded-full shadow w-full sm:w-auto">
+        Upload 📎
+      </button>
     </form>
 
     <!-- Options -->
@@ -89,11 +122,13 @@
         <input type="checkbox" id="privacy-toggle" class="accent-purple-500">
         Hide content in toast
       </label>
-      <button id="delete-all-btn" class="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white text-sm px-4 py-2 rounded-full shadow-md">🗑️ Delete All</button>
+      <button id="delete-all-btn" class="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white text-sm px-4 py-2 rounded-full shadow">
+        🗑️ Delete All
+      </button>
     </div>
   </main>
 
-  <!-- ✅ Footer -->
+  <!-- Footer -->
   <footer class="w-full mt-6 text-center text-xs text-gray-500 py-4 border-t border-purple-100">
     Made with 💖 by <strong>Mohib</strong> · LoveChat © 2025
   </footer>
